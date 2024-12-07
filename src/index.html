@@ -19,12 +19,11 @@
     </nav>
 
     <main class="main-content">
-        <!-- Section principale combinée (accueil + analyse) -->
         <section id="main" class="page active">
             <div class="container">
                 <h1>Bienvenue sur VintedGooat</h1>
                 
-                <!-- Features Cards -->
+                <!-- Features -->
                 <div class="features">
                     <div class="feature-card">
                         <h2>Simple d'utilisation</h2>
@@ -41,21 +40,22 @@
                     </div>
                 </div>
 
-                <!-- Zone d'analyse intégrée -->
-                <div class="analysis-section">
-                    <div class="analysis-form">
-                        <textarea id="profile-input" placeholder="Collez ici le contenu de votre profil Vinted..."></textarea>
-                        <div class="button-group">
-                            <button id="analyze-button" class="btn btn-primary">Analyser</button>
-                            <button id="reset-button" class="btn btn-secondary">Nouvelle analyse</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Zone de résultats -->
-                    <div id="analysis-results" class="results-container">
-                        <!-- Les résultats seront ajoutés ici -->
+                <!-- Analyse Form -->
+                <div class="analysis-form">
+                    <h2>Analyser une boutique</h2>
+                    <textarea id="profile-input" placeholder="Collez ici le contenu de votre profil Vinted..."></textarea>
+                    <div class="button-group">
+                        <button id="analyze-button" class="btn btn-primary">
+                            <span>Analyser</span>
+                        </button>
+                        <button id="reset-button" class="btn btn-secondary">
+                            <span>Nouvelle analyse</span>
+                        </button>
                     </div>
                 </div>
+
+                <!-- Results Section -->
+                <div id="analysis-results" class="results-container"></div>
             </div>
         </section>
 
@@ -64,6 +64,7 @@
             <div class="container">
                 <h1>Analyse Pro</h1>
                 <div class="analysis-form">
+                    <h2>Analyser vos ventes pro</h2>
                     <textarea id="pro-input" placeholder="Collez ici votre historique de transactions..."></textarea>
                     <button class="btn btn-primary">Analyser</button>
                 </div>
