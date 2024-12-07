@@ -1,5 +1,5 @@
-import '../css/style.css';
-import { analyzeProfile } from '../behaviors/profileParser.js';
+import './css/style.css';  // Changé de '../css/style.css'
+import { analyzeProfile } from './src/behaviors/profileParser.js';  // Changé de '../behaviors/profileParser.js'
 import Chart from 'chart.js/auto';
 
 document.addEventListener('DOMContentLoaded', () => {
