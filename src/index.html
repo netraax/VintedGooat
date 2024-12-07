@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VintedGoat - Analyse Vinted</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">VintedGoat</div>
+            <ul class="nav-links">
+                <li><a href="#accueil" class="active">Accueil</a></li>
+                <li><a href="#analyse-boutique">Analyse Boutique</a></li>
+                <li><a href="#analyse-pro">Analyse Pro</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Section Accueil -->
+        <section id="accueil" class="section">
+            <div class="container">
+                <h1>Bienvenue sur VintedGoat</h1>
+                <div class="features">
+                    <div class="feature-card">
+                        <h3>Simple d'utilisation</h3>
+                        <p>Copiez-collez simplement le contenu de votre profil Vinted</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>100% Sécurisé</h3>
+                        <p>Analyse locale, aucune donnée n'est stockée</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Analyse Détaillée</h3>
+                        <p>Statistiques complètes de votre activité</p>
+                    </div>
+                </div>
+                <div class="cta-button">
+                    <a href="https://www.vinted.fr" target="_blank" class="btn btn-primary">Aller sur Vinted</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section Analyse Boutique -->
+        <section id="analyse-boutique" class="section">
+            <div class="container">
+                <h2>Analyse de Boutique</h2>
+                <div class="analysis-form">
+                    <textarea id="shop-input" placeholder="Collez ici le contenu de votre profil Vinted..."></textarea>
+                    <div class="button-group">
+                        <button id="analyze-shop" class="btn btn-primary">Analyser</button>
+                        <button id="reset-shop" class="btn btn-secondary">Nouvelle analyse</button>
+                    </div>
+                </div>
+                <div id="shop-results" class="results-container"></div>
+            </div>
+        </section>
+
+        <!-- Section Analyse Pro -->
+        <section id="analyse-pro" class="section">
+            <div class="container">
+                <h2>Analyse Pro</h2>
+                <div class="analysis-form">
+                    <textarea id="pro-input" placeholder="Collez ici votre historique de transactions..."></textarea>
+                    <button id="analyze-pro" class="btn btn-primary">Analyser</button>
+                </div>
+                <div id="pro-results" class="results-container"></div>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/app.js" type="module"></script>
+    <script src="js/parser.js" type="module"></script>
+    <script src="js/charts.js" type="module"></script>
+</body>
+</html>
