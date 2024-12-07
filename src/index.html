@@ -4,84 +4,74 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VintedGooat - Analyse Vinted</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-    <header>
-        <nav class="navbar bg-[#09B1BA] shadow-lg">
-            <div class="container nav-container max-w-7xl mx-auto px-4">
-                <a href="/" class="logo text-white text-2xl font-bold">VintedGooat</a>
-                <div class="nav-buttons">
-                    <button class="nav-btn hover:bg-[#0A8E96] transition-colors" data-page="accueil">Accueil</button>
-                    <button class="nav-btn hover:bg-[#0A8E96] transition-colors" data-page="analyse-boutique">Analyse Boutique</button>
-                    <button class="nav-btn hover:bg-[#0A8E96] transition-colors" data-page="analyse-pro">Analyse Pro</button>
-                </div>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="logo">VintedGooat</a>
+            <div class="nav-buttons">
+                <button class="nav-btn active" data-page="main">Accueil</button>
+                <button class="nav-btn" data-page="analyse-pro">Analyse Pro</button>
             </div>
-        </nav>
-    </header>
-    <main class="main-content bg-gray-50">
-        <section id="accueil" class="page">
-            <div class="container max-w-7xl mx-auto px-4 py-8">
-                <h1 class="text-3xl font-bold text-gray-800 mb-8">Bienvenue sur VintedGooat</h1>
-                <div class="features grid md:grid-cols-3 gap-6">
-                    <div class="feature-card bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                        <h2 class="text-xl font-semibold text-[#09B1BA] mb-4">Simple d'utilisation</h2>
-                        <p class="text-gray-600 mb-4">Copiez-collez simplement le contenu de votre profil Vinted</p>
-                        <a href="https://www.vinted.fr" target="_blank" class="btn bg-[#09B1BA] hover:bg-[#0A8E96] text-white transition-colors">Aller sur Vinted</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <!-- Section principale combinant accueil et analyse -->
+        <section id="main" class="page active">
+            <div class="container">
+                <h1>Bienvenue sur VintedGooat</h1>
+                
+                <!-- Features Cards -->
+                <div class="features">
+                    <div class="feature-card">
+                        <h2>Simple d'utilisation</h2>
+                        <p>Copiez-collez simplement le contenu de votre profil Vinted</p>
+                        <a href="https://www.vinted.fr" target="_blank" class="btn">Aller sur Vinted</a>
                     </div>
-                    <div class="feature-card bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                        <h2 class="text-xl font-semibold text-[#09B1BA]">100% Sécurisé</h2>
-                        <p class="text-gray-600">Analyse locale, aucune donnée n'est stockée</p>
+                    <div class="feature-card">
+                        <h2>100% Sécurisé</h2>
+                        <p>Analyse locale, aucune donnée n'est stockée</p>
                     </div>
-                    <div class="feature-card bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                        <h2 class="text-xl font-semibold text-[#09B1BA]">Analyse Détaillée</h2>
-                        <p class="text-gray-600">Statistiques complètes de votre activité</p>
+                    <div class="feature-card">
+                        <h2>Analyse Détaillée</h2>
+                        <p>Statistiques complètes de votre activité</p>
+                    </div>
+                </div>
+
+                <!-- Analyse Form -->
+                <div class="analysis-section">
+                    <div class="analysis-form">
+                        <textarea id="profile-input" placeholder="Collez ici le contenu de votre profil Vinted..."></textarea>
+                        <div class="button-group">
+                            <button id="analyze-button" class="btn btn-primary">Analyser</button>
+                            <button id="reset-button" class="btn btn-secondary">Nouvelle analyse</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Zone de résultats -->
+                    <div id="analysis-results" class="results-container">
+                        <!-- Les graphiques seront ajoutés ici -->
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="analyse-boutique" class="page hidden">
-            <div class="container max-w-7xl mx-auto px-4 py-8">
-                <h1 class="text-3xl font-bold text-gray-800 mb-8">Analyse de Boutique</h1>
-                <div class="analysis-form bg-white rounded-lg shadow-md p-6">
-                    <textarea id="profile-input" 
-                        class="w-full h-48 p-4 border rounded-lg resize-y mb-4 focus:ring-2 focus:ring-[#09B1BA] focus:border-transparent"
-                        placeholder="Collez ici le contenu de votre profil Vinted..."></textarea>
-                    <div class="button-group flex gap-4">
-                        <button id="analyze-button" class="btn btn-primary bg-[#09B1BA] hover:bg-[#0A8E96]">Analyser</button>
-                        <button id="reset-button" class="btn btn-secondary bg-gray-200 hover:bg-gray-300">Nouvelle analyse</button>
-                    </div>
-                </div>
-                <div id="analysis-results" class="results-container mt-8">
-                    <!-- Les graphiques seront ajoutés ici -->
-                    <div class="grid md:grid-cols-2 gap-6 mt-8">
-                        <div class="chart-container bg-white p-6 rounded-lg shadow-md">
-                            <canvas id="salesChart"></canvas>
-                        </div>
-                        <div class="chart-container bg-white p-6 rounded-lg shadow-md">
-                            <canvas id="countryChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
+        <!-- Section Analyse Pro -->
         <section id="analyse-pro" class="page hidden">
-            <div class="container max-w-7xl mx-auto px-4 py-8">
-                <h1 class="text-3xl font-bold text-gray-800 mb-8">Analyse Pro</h1>
-                <div class="analysis-form bg-white rounded-lg shadow-md p-6">
-                    <textarea id="pro-input" 
-                        class="w-full h-48 p-4 border rounded-lg resize-y mb-4 focus:ring-2 focus:ring-[#09B1BA] focus:border-transparent"
-                        placeholder="Collez ici votre historique de transactions..."></textarea>
-                    <button class="btn btn-primary bg-[#09B1BA] hover:bg-[#0A8E96]">Analyser</button>
+            <div class="container">
+                <h1>Analyse Pro</h1>
+                <div class="analysis-form">
+                    <textarea id="pro-input" placeholder="Collez ici votre historique de transactions..."></textarea>
+                    <button class="btn btn-primary">Analyser</button>
                 </div>
-                <div id="pro-results" class="mt-8"></div>
+                <div id="pro-results"></div>
             </div>
         </section>
     </main>
+
     <script type="module" src="./main.js"></script>
 </body>
 </html>
