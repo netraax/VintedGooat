@@ -1,21 +1,22 @@
 import { defineConfig } from 'vite'
+import { resolve } from 'path'
 
 export default defineConfig({
-  root: 'src',
+  root: 'src/html',  
   base: '/',
   build: {
-    outDir: '../dist',
+    outDir: '../../dist',
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        main: 'src/index.html',
-      },
-      output: {
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name === 'style.css') return 'assets/css/style.css'
-          return 'assets/[name]-[hash][extname]'
-        },
-      },
+        main: resolve(__dirname, 'src/html/index.html'),
+      }
     },
+  },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+      '@behaviors': resolve(__dirname, 'src/behaviors')
+    }
   }
 })
