@@ -1,11 +1,7 @@
 import '../css/style.css';
 
-// Garder une référence aux graphiques pour pouvoir les nettoyer
-let charts = {};
-
 document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
-    initAnalytics();
     initAnalysis();
 });
 
@@ -13,13 +9,16 @@ function initNavigation() {
     const navButtons = document.querySelectorAll('.nav-btn');
     const pages = document.querySelectorAll('.page');
 
+    // Gérer la navigation
     navButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetPage = button.getAttribute('data-page');
 
+            // Mettre à jour les boutons actifs
             navButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
 
+            // Afficher la bonne page
             pages.forEach(page => {
                 if (page.id === targetPage) {
                     page.classList.remove('hidden');
@@ -30,6 +29,7 @@ function initNavigation() {
         });
     });
 
+    // Activer la page d'accueil par défaut
     document.querySelector('[data-page="accueil"]').classList.add('active');
 }
 
@@ -43,19 +43,16 @@ function initAnalysis() {
         analyzeBtn.addEventListener('click', () => {
             const text = textarea?.value.trim();
             if (!text) {
-                showNotification('Veuillez coller le contenu de votre profil Vinted', 'error');
+                alert('Veuillez coller le contenu de votre profil Vinted');
                 return;
             }
 
             try {
                 const data = analyzeVintedProfile(text);
                 displayResults(data, resultsDiv);
-                createCharts(data); // Ajout des graphiques
-                trackAnalysis(data); // Appel de la fonction analytics
-                showNotification('Analyse terminée avec succès', 'success');
             } catch (error) {
                 console.error('Erreur d\'analyse:', error);
-                showNotification('Erreur lors de l\'analyse', 'error');
+                alert('Une erreur est survenue lors de l\'analyse');
             }
         });
     }
@@ -63,106 +60,112 @@ function initAnalysis() {
     if (resetBtn) {
         resetBtn.addEventListener('click', () => {
             if (textarea) textarea.value = '';
-            if (resultsDiv) {
-                resultsDiv.innerHTML = '';
-                destroyCharts(); // Nettoyage des graphiques
-            }
-            clearResults(); // Appel pour réinitialiser les données analysées
-            showNotification('Analyse réinitialisée');
+            if (resultsDiv) resultsDiv.innerHTML = '';
         });
     }
 }
 
 function analyzeVintedProfile(text) {
-    const articlesMatch = text.match(/(\d+)\s*articles/);
-    const totalArticles = articlesMatch ? parseInt(articlesMatch[1]) : 0;
-
     const data = {
         profile: extractProfileInfo(text),
         sales: extractSalesInfo(text),
-        items: extractItems(text),
-        totalArticles: totalArticles
+        items: extractItems(text)
     };
-
-    data.metrics = calculateMetrics(data); // Calcul des métriques
     return data;
 }
 
-function calculateMetrics(data) {
-    return {
-        averagePrice: data.items.reduce((sum, item) => sum + item.price, 0) / data.items.length || 0,
-        conversionRate: ((data.profile.totalRatings / data.totalArticles) * 100).toFixed(1),
-        topBrands: data.items.reduce((brands, item) => {
-            brands[item.brand] = (brands[item.brand] || 0) + 1;
-            return brands;
-        }, {})
+function extractProfileInfo(text) {
+    const info = {
+        shopName: '',
+        followers: 0,
+        following: 0,
+        rating: 0,
+        totalRatings: 0
     };
+
+    // Extraction du nom de la boutique
+    const shopNameMatch = text.match(/^([^\n]+)(?=\nÀ propos)/m);
+    if (shopNameMatch) {
+        info.shopName = shopNameMatch[1].trim();
+    }
+
+    // Extraction des abonnés/abonnements
+    const followersMatch = text.match(/(\d+)\s*Abonnés?/);
+    const followingMatch = text.match(/(\d+)\s*Abonnements?/);
+    if (followersMatch) info.followers = parseInt(followersMatch[1]);
+    if (followingMatch) info.following = parseInt(followingMatch[1]);
+
+    // Extraction des évaluations
+    const ratingsMatch = text.match(/Évaluations des membres \((\d+)\)/);
+    const autoEvalMatch = text.match(/Évaluations automatiques \((\d+)\)/);
+    if (ratingsMatch) info.totalRatings += parseInt(ratingsMatch[1]);
+    if (autoEvalMatch) info.totalRatings += parseInt(autoEvalMatch[1]);
+
+    // Note globale
+    const ratingMatch = text.match(/(\d+\.\d+)\s*\(/);
+    if (ratingMatch) info.rating = parseFloat(ratingMatch[1]);
+
+    return info;
 }
 
-function createCharts(data) {
-    destroyCharts();
+function extractSalesInfo(text) {
+    const sales = {
+        byDate: {},
+        byCountry: {},
+        recent: []
+    };
 
-    const countryCtx = document.getElementById('countryChart')?.getContext('2d');
-    if (countryCtx) {
-        charts.country = new Chart(countryCtx, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(data.sales.byCountry),
-                datasets: [{
-                    data: Object.values(data.sales.byCountry),
-                    backgroundColor: ['#09B1BA', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4']
-                }]
-            },
-            options: {
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Répartition des ventes par pays',
-                        font: { size: 16 }
-                    }
-                }
-            }
+    // Extraction des dates de vente
+    const datePattern = /il y a (\d+) (jour|jours|semaine|semaines|mois|an|ans)/g;
+    let match;
+    while ((match = datePattern.exec(text)) !== null) {
+        const amount = parseInt(match[1]);
+        const unit = match[2];
+        
+        sales.recent.push({ timeAgo: amount, unit });
+    }
+
+    // Détection des pays par langue
+    const languages = {
+        'merci|parfait': 'France',
+        'grazie|perfetto': 'Italie',
+        'gracias|perfecto': 'Espagne',
+        'thank you': 'Royaume-Uni',
+        'danke': 'Allemagne'
+    };
+
+    Object.entries(languages).forEach(([pattern, country]) => {
+        const regex = new RegExp(pattern, 'gi');
+        const matches = text.match(regex);
+        if (matches) {
+            sales.byCountry[country] = matches.length;
+        }
+    });
+
+    return sales;
+}
+
+function extractItems(text) {
+    const items = [];
+    const itemPattern = /([^,]+), prix : (\d+,\d+) €, marque : ([^,]+), taille : ([^\n]+)/g;
+    let match;
+
+    while ((match = itemPattern.exec(text)) !== null) {
+        items.push({
+            name: match[1].trim(),
+            price: parseFloat(match[2].replace(',', '.')),
+            brand: match[3].trim(),
+            size: match[4].trim()
         });
     }
 
-    const salesCtx = document.getElementById('salesChart')?.getContext('2d');
-    if (salesCtx) {
-        const salesData = prepareSalesData(data.sales.recent);
-        charts.sales = new Chart(salesCtx, {
-            type: 'line',
-            data: {
-                labels: salesData.labels,
-                datasets: [{
-                    label: 'Ventes',
-                    data: salesData.data,
-                    borderColor: '#09B1BA',
-                    backgroundColor: 'rgba(9, 177, 186, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: { display: true, text: 'Nombre de ventes' }
-                    }
-                }
-            }
-        });
-    }
-}
-
-function destroyCharts() {
-    Object.values(charts).forEach(chart => chart?.destroy());
-    charts = {};
+    return items;
 }
 
 function displayResults(data, container) {
     if (!container) return;
 
-    container.innerHTML = `
+    const html = `
         <div class="results-grid">
             <div class="result-card">
                 <h3>Informations du Profil</h3>
@@ -171,21 +174,35 @@ function displayResults(data, container) {
                 <p>Abonnés: ${data.profile.followers}</p>
                 <p>Total des ventes: ${data.profile.totalRatings}</p>
             </div>
+            
             <div class="result-card">
                 <h3>Statistiques Articles</h3>
-                <p>Articles en vente: ${data.totalArticles}</p>
-                <p>Prix moyen: ${data.metrics.averagePrice.toFixed(2)}€</p>
-                <p>Taux de conversion: ${data.metrics.conversionRate}%</p>
+                <p>Articles en vente: ${data.items.length}</p>
+                <p>Prix moyen: ${(data.items.reduce((sum, item) => sum + item.price, 0) / data.items.length).toFixed(2)}€</p>
+            </div>
+
+            <div class="result-card">
+                <h3>Ventes par Pays</h3>
+                <ul>
+                    ${Object.entries(data.sales.byCountry)
+                        .map(([country, count]) => 
+                            `<li>${country}: ${count} vente${count > 1 ? 's' : ''}</li>`
+                        ).join('')}
+                </ul>
+            </div>
+
+            <div class="result-card">
+                <h3>Ventes Récentes</h3>
+                <ul>
+                    ${data.sales.recent.slice(0, 5)
+                        .map(sale => 
+                            `<li>Il y a ${sale.timeAgo} ${sale.unit}</li>`
+                        ).join('')}
+                </ul>
             </div>
         </div>
     `;
-}
 
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
+    container.innerHTML = html;
+    container.style.display = 'block';
 }
