@@ -1,11 +1,14 @@
 // Fonction principale d'analyse
 export function analyzeProfile(text) {
-    return {
+    const data = {
         profile: extractProfileInfo(text),
         sales: extractSalesInfo(text),
         items: extractItems(text),
-        metrics: calculateMetrics(text)
+        totalArticles: extractTotalArticles(text),
     };
+
+    data.metrics = calculateMetrics(data);
+    return data;
 }
 
 // Extraction des informations du profil
@@ -17,44 +20,41 @@ function extractProfileInfo(text) {
         totalRatings: 0,
         memberRatings: 0,
         autoRatings: 0,
-        rating: 0
+        rating: 0,
     };
 
     // Nom de la boutique
-    const shopNameMatch = text.match(/^([^\n]+)(?=\nÀ propos)/);
+    const shopNameMatch = text.match(/^([^\n]+)(?=\s*À propos|$)/m);
     if (shopNameMatch) {
         info.shopName = shopNameMatch[1].trim();
     }
 
     // Abonnés et abonnements
-    const followersMatch = text.match(/(\d+)\s*Abonnés/);
-    const followingMatch = text.match(/(\d+)\s*Abonnement/);
+    const followersMatch = text.match(/(\d+)\s*Abonnés?/);
+    const followingMatch = text.match(/(\d+)\s*Abonnements?/);
     if (followersMatch) info.followers = parseInt(followersMatch[1]);
     if (followingMatch) info.following = parseInt(followingMatch[1]);
 
-    // Évaluations
-    const ratingsMatch = text.match(/Évaluations des membres \((\d+)\)\s*Évaluations automatiques \((\d+)\)/);
-    if (ratingsMatch) {
-        info.memberRatings = parseInt(ratingsMatch[1]);
-        info.autoRatings = parseInt(ratingsMatch[2]);
-        info.totalRatings = info.memberRatings + info.autoRatings;
-    }
+    // Évaluations des membres et automatiques
+    const ratingsMatch = text.match(/Évaluations des membres \((\d+)\)/);
+    const autoRatingsMatch = text.match(/Évaluations automatiques \((\d+)\)/);
+    if (ratingsMatch) info.memberRatings = parseInt(ratingsMatch[1]);
+    if (autoRatingsMatch) info.autoRatings = parseInt(autoRatingsMatch[1]);
+    info.totalRatings = info.memberRatings + info.autoRatings;
 
     // Note globale
-    const ratingMatch = text.match(/(\d+\.\d+)\s*\(/);
-    if (ratingMatch) {
-        info.rating = parseFloat(ratingMatch[1]);
-    }
+    const ratingMatch = text.match(/(\d+[.,]\d+)\s*\(/);
+    if (ratingMatch) info.rating = parseFloat(ratingMatch[1].replace(',', '.'));
 
     return info;
 }
 
-// Extraction des informations de vente
+// Extraction des informations sur les ventes
 function extractSalesInfo(text) {
     const sales = {
         byDate: {},
         byCountry: {},
-        recentSales: []
+        recentSales: [],
     };
 
     // Extraction des dates de vente
@@ -65,18 +65,18 @@ function extractSalesInfo(text) {
         const unit = match[2];
         const date = calculateDate(amount, unit);
         const dateStr = date.toISOString().split('T')[0];
-        
+
         sales.byDate[dateStr] = (sales.byDate[dateStr] || 0) + 1;
         sales.recentSales.push({ date, amount, unit });
     }
 
-    // Détection des pays par langue
+    // Comptage des ventes par pays
     const languagePatterns = {
         'merci|parfait|nickel': 'France',
-        'thank you|thanks': 'Royaume-Uni',
+        'thank you|perfect': 'Royaume-Uni',
         'grazie|perfetto': 'Italie',
         'gracias|perfecto': 'Espagne',
-        'danke': 'Allemagne'
+        'danke|perfekt': 'Allemagne',
     };
 
     Object.entries(languagePatterns).forEach(([pattern, country]) => {
@@ -93,7 +93,7 @@ function extractSalesInfo(text) {
 // Extraction des articles
 function extractItems(text) {
     const items = [];
-    const itemPattern = /([^,]+), prix : (\d+,\d+) €, marque : ([^,]+), taille : ([^\n]+)/g;
+    const itemPattern = /([^,]+),\s*prix\s*:\s*(\d+[.,]\d+)\s*€,\s*marque\s*:\s*([^,]+),\s*taille\s*:\s*([^\n]+)/g;
     let match;
 
     while ((match = itemPattern.exec(text)) !== null) {
@@ -101,53 +101,49 @@ function extractItems(text) {
             name: match[1].trim(),
             price: parseFloat(match[2].replace(',', '.')),
             brand: match[3].trim(),
-            size: match[4].trim()
+            size: match[4].trim(),
         });
     }
 
     return items;
 }
 
-// Calcul des métriques
-function calculateMetrics(text) {
-    const metrics = {
-        averagePrice: 0,
-        totalRevenue: 0,
-        topBrands: {},
-        salesVelocity: 0,
-        engagementRate: 0
-    };
-
-    // Calcul des prix moyens et revenus
-    const items = extractItems(text);
-    if (items.length > 0) {
-        const prices = items.map(item => item.price);
-        metrics.averagePrice = prices.reduce((a, b) => a + b, 0) / prices.length;
-        metrics.totalRevenue = prices.reduce((a, b) => a + b, 0);
-    }
-
-    // Marques les plus vendues
-    items.forEach(item => {
-        metrics.topBrands[item.brand] = (metrics.topBrands[item.brand] || 0) + 1;
-    });
-
-    // Vélocité des ventes (ventes par semaine)
-    const sales = extractSalesInfo(text);
-    const salesDates = Object.keys(sales.byDate).map(date => new Date(date));
-    if (salesDates.length > 1) {
-        const oldestSale = Math.min(...salesDates.map(d => d.getTime()));
-        const newestSale = Math.max(...salesDates.map(d => d.getTime()));
-        const weeksDiff = (newestSale - oldestSale) / (1000 * 60 * 60 * 24 * 7);
-        metrics.salesVelocity = salesDates.length / weeksDiff;
-    }
-
-    return metrics;
+// Extraction du total des articles
+function extractTotalArticles(text) {
+    const articlesMatch = text.match(/(\d+)\s*articles?|(\d+)\s*article/);
+    return articlesMatch ? parseInt(articlesMatch[1] || articlesMatch[2]) : 0;
 }
 
-// Fonction utilitaire pour calculer les dates
+// Calcul des métriques
+function calculateMetrics(data) {
+    const totalRevenue = data.items.reduce((sum, item) => sum + item.price, 0);
+    const averagePrice = data.items.length > 0 ? totalRevenue / data.items.length : 0;
+    const salesVelocity = data.sales.recentSales.length > 0
+        ? (data.sales.recentSales.length / 30).toFixed(2)
+        : 0;
+
+    return {
+        averagePrice,
+        totalRevenue,
+        salesVelocity,
+        topBrands: calculateTopBrands(data.items),
+        conversionRate: ((data.profile.totalRatings / Math.max(data.totalArticles, 1)) * 100).toFixed(1),
+    };
+}
+
+// Calcul des marques les plus populaires
+function calculateTopBrands(items) {
+    const topBrands = {};
+    items.forEach(item => {
+        topBrands[item.brand] = (topBrands[item.brand] || 0) + 1;
+    });
+    return topBrands;
+}
+
+// Fonction utilitaire pour calculer une date à partir d'une période
 function calculateDate(amount, unit) {
     const date = new Date();
-    switch(unit) {
+    switch (unit) {
         case 'heure':
         case 'heures':
             date.setHours(date.getHours() - amount);
