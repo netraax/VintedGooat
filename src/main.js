@@ -1,11 +1,16 @@
-import './css/style.css'
-import App from './app'
+import '../css/style.css'
+import { initializeAnalytics } from './behaviors/analytics.js'
+import { setupNotifications } from './behaviors/notifications.js'
+import { initProfileParser } from './behaviors/profileParser.js'
+import { initTransactionParser } from './behaviors/transactionParser.js'
+import { initializeUI } from './behaviors/uiManager.js'
 
-// Mount app
+// Initialize application
 document.addEventListener('DOMContentLoaded', () => {
-  const root = document.getElementById('root')
-  if (root) {
-    root.innerHTML = ''
-    root.appendChild(App())
-  }
+    console.log('Application starting...')
+    initializeUI()
+    initializeAnalytics()
+    setupNotifications()
+    initProfileParser()
+    initTransactionParser()
 })
