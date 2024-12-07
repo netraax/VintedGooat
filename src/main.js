@@ -5,6 +5,7 @@ let charts = {};
 
 document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
+    initAnalytics();
     initAnalysis();
 });
 
@@ -50,6 +51,7 @@ function initAnalysis() {
                 const data = analyzeVintedProfile(text);
                 displayResults(data, resultsDiv);
                 createCharts(data); // Ajout des graphiques
+                trackAnalysis(data); // Appel de la fonction analytics
                 showNotification('Analyse terminée avec succès', 'success');
             } catch (error) {
                 console.error('Erreur d\'analyse:', error);
@@ -65,13 +67,13 @@ function initAnalysis() {
                 resultsDiv.innerHTML = '';
                 destroyCharts(); // Nettoyage des graphiques
             }
+            clearResults(); // Appel pour réinitialiser les données analysées
             showNotification('Analyse réinitialisée');
         });
     }
 }
 
 function analyzeVintedProfile(text) {
-    // Nouveau pattern pour le nombre total d'articles
     const articlesMatch = text.match(/(\d+)\s*articles/);
     const totalArticles = articlesMatch ? parseInt(articlesMatch[1]) : 0;
 
@@ -82,13 +84,10 @@ function analyzeVintedProfile(text) {
         totalArticles: totalArticles
     };
 
-    // Ajout des métriques calculées
-    data.metrics = calculateMetrics(data);
-
+    data.metrics = calculateMetrics(data); // Calcul des métriques
     return data;
 }
 
-// Nouvelle fonction pour les métriques calculées
 function calculateMetrics(data) {
     return {
         averagePrice: data.items.reduce((sum, item) => sum + item.price, 0) / data.items.length || 0,
@@ -100,12 +99,9 @@ function calculateMetrics(data) {
     };
 }
 
-// Gardez vos fonctions extractProfileInfo, extractSalesInfo et extractItems telles quelles
-
 function createCharts(data) {
     destroyCharts();
 
-    // Graphique des ventes par pays
     const countryCtx = document.getElementById('countryChart')?.getContext('2d');
     if (countryCtx) {
         charts.country = new Chart(countryCtx, {
@@ -114,13 +110,7 @@ function createCharts(data) {
                 labels: Object.keys(data.sales.byCountry),
                 datasets: [{
                     data: Object.values(data.sales.byCountry),
-                    backgroundColor: [
-                        '#09B1BA',
-                        '#FF6B6B',
-                        '#4ECDC4',
-                        '#45B7D1',
-                        '#96CEB4'
-                    ]
+                    backgroundColor: ['#09B1BA', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4']
                 }]
             },
             options: {
@@ -128,17 +118,13 @@ function createCharts(data) {
                     title: {
                         display: true,
                         text: 'Répartition des ventes par pays',
-                        color: '#333',
-                        font: {
-                            size: 16
-                        }
+                        font: { size: 16 }
                     }
                 }
             }
         });
     }
 
-    // Graphique de l'évolution des ventes
     const salesCtx = document.getElementById('salesChart')?.getContext('2d');
     if (salesCtx) {
         const salesData = prepareSalesData(data.sales.recent);
@@ -157,23 +143,10 @@ function createCharts(data) {
             },
             options: {
                 responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Évolution des ventes',
-                        color: '#333',
-                        font: {
-                            size: 16
-                        }
-                    }
-                },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Nombre de ventes'
-                        }
+                        title: { display: true, text: 'Nombre de ventes' }
                     }
                 }
             }
@@ -181,33 +154,8 @@ function createCharts(data) {
     }
 }
 
-function prepareSalesData(recentSales) {
-    const sortedSales = recentSales.slice().sort((a, b) => {
-        const daysA = convertToTotalDays(a.timeAgo, a.unit);
-        const daysB = convertToTotalDays(b.timeAgo, b.unit);
-        return daysA - daysB;
-    });
-
-    return {
-        labels: sortedSales.map(sale => `Il y a ${sale.timeAgo} ${sale.unit}`),
-        data: sortedSales.map((_, index) => index + 1)
-    };
-}
-
-function convertToTotalDays(amount, unit) {
-    switch(unit) {
-        case 'jour': case 'jours': return amount;
-        case 'semaine': case 'semaines': return amount * 7;
-        case 'mois': return amount * 30;
-        case 'an': case 'ans': return amount * 365;
-        default: return amount;
-    }
-}
-
 function destroyCharts() {
-    Object.values(charts).forEach(chart => {
-        if (chart) chart.destroy();
-    });
+    Object.values(charts).forEach(chart => chart?.destroy());
     charts = {};
 }
 
@@ -223,39 +171,14 @@ function displayResults(data, container) {
                 <p>Abonnés: ${data.profile.followers}</p>
                 <p>Total des ventes: ${data.profile.totalRatings}</p>
             </div>
-            
             <div class="result-card">
                 <h3>Statistiques Articles</h3>
                 <p>Articles en vente: ${data.totalArticles}</p>
                 <p>Prix moyen: ${data.metrics.averagePrice.toFixed(2)}€</p>
                 <p>Taux de conversion: ${data.metrics.conversionRate}%</p>
             </div>
-
-            <div class="result-card chart-card">
-                <h3>Ventes par Pays</h3>
-                <canvas id="countryChart"></canvas>
-            </div>
-
-            <div class="result-card chart-card">
-                <h3>Évolution des Ventes</h3>
-                <canvas id="salesChart"></canvas>
-            </div>
-
-            <div class="result-card">
-                <h3>Marques Populaires</h3>
-                <ul>
-                    ${Object.entries(data.metrics.topBrands)
-                        .sort(([,a], [,b]) => b - a)
-                        .slice(0, 5)
-                        .map(([brand, count]) => 
-                            `<li>${brand}: ${count} article${count > 1 ? 's' : ''}</li>`
-                        ).join('')}
-                </ul>
-            </div>
         </div>
     `;
-
-    container.style.display = 'block';
 }
 
 function showNotification(message, type = 'info') {
@@ -264,9 +187,5 @@ function showNotification(message, type = 'info') {
     notification.textContent = message;
     
     document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.classList.add('hide');
-        setTimeout(() => notification.remove(), 500);
-    }, 3000);
+    setTimeout(() => notification.remove(), 3000);
 }
