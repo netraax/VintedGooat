@@ -1,24 +1,26 @@
 import '../css/style.css';
+import { analyzeProfile } from '../behaviors/profileParser.js';
+import Chart from 'chart.js/auto';
 
 document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
     initAnalysis();
+    initProAnalysis();
 });
 
 function initNavigation() {
     const navButtons = document.querySelectorAll('.nav-btn');
     const pages = document.querySelectorAll('.page');
 
-    // Gérer la navigation
     navButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetPage = button.getAttribute('data-page');
 
-            // Mettre à jour les boutons actifs
+            // Mise à jour des boutons actifs
             navButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
 
-            // Afficher la bonne page
+            // Affichage de la bonne page
             pages.forEach(page => {
                 if (page.id === targetPage) {
                     page.classList.remove('hidden');
@@ -48,8 +50,9 @@ function initAnalysis() {
             }
 
             try {
-                const data = analyzeVintedProfile(text);
-                displayResults(data, resultsDiv);
+                const analysisResults = analyzeProfile(text);
+                displayResults(analysisResults, resultsDiv);
+                createCharts(analysisResults);
             } catch (error) {
                 console.error('Erreur d\'analyse:', error);
                 alert('Une erreur est survenue lors de l\'analyse');
@@ -61,105 +64,20 @@ function initAnalysis() {
         resetBtn.addEventListener('click', () => {
             if (textarea) textarea.value = '';
             if (resultsDiv) resultsDiv.innerHTML = '';
+            // Nettoyer les graphiques si présents
+            const chartContainers = document.querySelectorAll('.chart-container');
+            chartContainers.forEach(container => container.remove());
         });
     }
 }
 
-function analyzeVintedProfile(text) {
-    const data = {
-        profile: extractProfileInfo(text),
-        sales: extractSalesInfo(text),
-        items: extractItems(text)
-    };
-    return data;
-}
-
-function extractProfileInfo(text) {
-    const info = {
-        shopName: '',
-        followers: 0,
-        following: 0,
-        rating: 0,
-        totalRatings: 0
-    };
-
-    // Extraction du nom de la boutique
-    const shopNameMatch = text.match(/^([^\n]+)(?=\nÀ propos)/m);
-    if (shopNameMatch) {
-        info.shopName = shopNameMatch[1].trim();
+function initProAnalysis() {
+    const proInput = document.getElementById('pro-input');
+    const proResults = document.getElementById('pro-results');
+    
+    if (proInput && proResults) {
+        // Logique pour l'analyse pro à implémenter
     }
-
-    // Extraction des abonnés/abonnements
-    const followersMatch = text.match(/(\d+)\s*Abonnés?/);
-    const followingMatch = text.match(/(\d+)\s*Abonnements?/);
-    if (followersMatch) info.followers = parseInt(followersMatch[1]);
-    if (followingMatch) info.following = parseInt(followingMatch[1]);
-
-    // Extraction des évaluations
-    const ratingsMatch = text.match(/Évaluations des membres \((\d+)\)/);
-    const autoEvalMatch = text.match(/Évaluations automatiques \((\d+)\)/);
-    if (ratingsMatch) info.totalRatings += parseInt(ratingsMatch[1]);
-    if (autoEvalMatch) info.totalRatings += parseInt(autoEvalMatch[1]);
-
-    // Note globale
-    const ratingMatch = text.match(/(\d+\.\d+)\s*\(/);
-    if (ratingMatch) info.rating = parseFloat(ratingMatch[1]);
-
-    return info;
-}
-
-function extractSalesInfo(text) {
-    const sales = {
-        byDate: {},
-        byCountry: {},
-        recent: []
-    };
-
-    // Extraction des dates de vente
-    const datePattern = /il y a (\d+) (jour|jours|semaine|semaines|mois|an|ans)/g;
-    let match;
-    while ((match = datePattern.exec(text)) !== null) {
-        const amount = parseInt(match[1]);
-        const unit = match[2];
-        
-        sales.recent.push({ timeAgo: amount, unit });
-    }
-
-    // Détection des pays par langue
-    const languages = {
-        'merci|parfait': 'France',
-        'grazie|perfetto': 'Italie',
-        'gracias|perfecto': 'Espagne',
-        'thank you': 'Royaume-Uni',
-        'danke': 'Allemagne'
-    };
-
-    Object.entries(languages).forEach(([pattern, country]) => {
-        const regex = new RegExp(pattern, 'gi');
-        const matches = text.match(regex);
-        if (matches) {
-            sales.byCountry[country] = matches.length;
-        }
-    });
-
-    return sales;
-}
-
-function extractItems(text) {
-    const items = [];
-    const itemPattern = /([^,]+), prix : (\d+,\d+) €, marque : ([^,]+), taille : ([^\n]+)/g;
-    let match;
-
-    while ((match = itemPattern.exec(text)) !== null) {
-        items.push({
-            name: match[1].trim(),
-            price: parseFloat(match[2].replace(',', '.')),
-            brand: match[3].trim(),
-            size: match[4].trim()
-        });
-    }
-
-    return items;
 }
 
 function displayResults(data, container) {
@@ -172,17 +90,21 @@ function displayResults(data, container) {
                 <p>Boutique: ${data.profile.shopName}</p>
                 <p>Note: ${data.profile.rating.toFixed(1)}/5</p>
                 <p>Abonnés: ${data.profile.followers}</p>
-                <p>Total des ventes: ${data.profile.totalRatings}</p>
+                <p>Total des évaluations: ${data.profile.totalRatings}</p>
+                <p>Évaluations membres: ${data.profile.memberRatings}</p>
+                <p>Évaluations auto: ${data.profile.autoRatings}</p>
             </div>
             
             <div class="result-card">
                 <h3>Statistiques Articles</h3>
-                <p>Articles en vente: ${data.items.length}</p>
-                <p>Prix moyen: ${(data.items.reduce((sum, item) => sum + item.price, 0) / data.items.length).toFixed(2)}€</p>
+                <p>Prix moyen: ${data.metrics.averagePrice.toFixed(2)}€</p>
+                <p>Revenu total estimé: ${data.metrics.totalRevenue.toFixed(2)}€</p>
+                <p>Vitesse de vente: ${data.metrics.salesVelocity.toFixed(1)} ventes/semaine</p>
             </div>
 
             <div class="result-card">
                 <h3>Ventes par Pays</h3>
+                <div id="countryChartContainer" class="chart-container"></div>
                 <ul>
                     ${Object.entries(data.sales.byCountry)
                         .map(([country, count]) => 
@@ -193,10 +115,11 @@ function displayResults(data, container) {
 
             <div class="result-card">
                 <h3>Ventes Récentes</h3>
+                <div id="salesChartContainer" class="chart-container"></div>
                 <ul>
-                    ${data.sales.recent.slice(0, 5)
+                    ${data.sales.recentSales.slice(0, 5)
                         .map(sale => 
-                            `<li>Il y a ${sale.timeAgo} ${sale.unit}</li>`
+                            `<li>Il y a ${sale.amount} ${sale.unit}</li>`
                         ).join('')}
                 </ul>
             </div>
@@ -204,5 +127,68 @@ function displayResults(data, container) {
     `;
 
     container.innerHTML = html;
-    container.style.display = 'block';
 }
+
+function createCharts(data) {
+    // Graphique des ventes par pays
+    const countryData = Object.entries(data.sales.byCountry);
+    new Chart(
+        document.getElementById('countryChartContainer'),
+        {
+            type: 'doughnut',
+            data: {
+                labels: countryData.map(([country]) => country),
+                datasets: [{
+                    data: countryData.map(([_, count]) => count),
+                    backgroundColor: [
+                        '#FF6384',
+                        '#36A2EB',
+                        '#FFCE56',
+                        '#4BC0C0',
+                        '#9966FF'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        }
+    );
+
+    // Graphique des ventes récentes
+    const salesDates = Object.entries(data.sales.byDate).slice(-10);
+    new Chart(
+        document.getElementById('salesChartContainer'),
+        {
+            type: 'line',
+            data: {
+                labels: salesDates.map(([date]) => date),
+                datasets: [{
+                    label: 'Ventes par jour',
+                    data: salesDates.map(([_, count]) => count),
+                    borderColor: '#36A2EB',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        }
+    );
+}
+
+export {
+    initNavigation,
+    initAnalysis,
+    initProAnalysis
+};
