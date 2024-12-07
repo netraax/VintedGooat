@@ -1,16 +1,14 @@
-import '../css/style.css'
-import { initializeAnalytics } from './behaviors/analytics.js'
-import { setupNotifications } from './behaviors/notifications.js'
-import { initProfileParser } from './behaviors/profileParser.js'
-import { initTransactionParser } from './behaviors/transactionParser.js'
-import { initializeUI } from './behaviors/uiManager.js'
-
-// Initialize application
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('Application starting...')
-    initializeUI()
-    initializeAnalytics()
-    setupNotifications()
-    initProfileParser()
-    initTransactionParser()
-})
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VintedGooat</title>
+  </head>
+  <body>
+    <div id="app">
+      <h1>VintedGooat</h1>
+    </div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
