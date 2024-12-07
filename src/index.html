@@ -19,7 +19,6 @@
             </div>
         </nav>
     </header>
-
     <main class="main-content">
         <section id="accueil" class="page">
             <div class="container">
@@ -41,21 +40,19 @@
                 </div>
             </div>
         </section>
-
         <section id="analyse-boutique" class="page hidden">
             <div class="container">
                 <h1>Analyse de Boutique</h1>
                 <div class="analysis-form">
-                    <textarea id="shop-input" placeholder="Collez ici le contenu de votre profil Vinted..."></textarea>
+                    <textarea id="profile-input" placeholder="Collez ici le contenu de votre profil Vinted..."></textarea>
                     <div class="button-group">
-                        <button id="analyze-btn" class="btn btn-primary">Analyser</button>
-                        <button id="reset-btn" class="btn btn-secondary">Nouvelle analyse</button>
+                        <button id="analyze-button" class="btn btn-primary">Analyser</button>
+                        <button id="reset-button" class="btn btn-secondary">Nouvelle analyse</button>
                     </div>
                 </div>
-                <div id="results"></div>
+                <div id="analysis-results" class="results-container"></div>
             </div>
         </section>
-
         <section id="analyse-pro" class="page hidden">
             <div class="container">
                 <h1>Analyse Pro</h1>
@@ -67,7 +64,6 @@
             </div>
         </section>
     </main>
-
     <script type="module" src="./main.js"></script>
 </body>
 </html>
