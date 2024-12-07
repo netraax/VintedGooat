@@ -4,30 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VintedGooat - Analyse Vinted</title>
-    <meta name="description" content="Analysez vos performances de vente et optimisez votre activité sur Vinted">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-    <div id="app">
-        <nav class="navbar">
-            <div class="container">
-                <div class="logo">VintedGooat</div>
-                <ul class="nav-links">
-                    <li><a href="/" class="nav-link" data-page="accueil">Accueil</a></li>
-                    <li><a href="/analyse-boutique" class="nav-link" data-page="analyse-boutique">Analyse Boutique</a></li>
-                    <li><a href="/analyse-pro" class="nav-link" data-page="analyse-pro">Analyse Pro</a></li>
-                </ul>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <h1>VintedGooat</h1>
             </div>
-        </nav>
+            <div class="nav-menu">
+                <a href="#home" class="nav-link active" data-section="home">Accueil</a>
+                <a href="#shop" class="nav-link" data-section="shop">Analyse Boutique</a>
+                <a href="#pro" class="nav-link" data-section="pro">Analyse Pro</a>
+            </div>
+        </div>
+    </nav>
 
-        <main id="main-content">
-            <section id="accueil" class="section-content">
-                <div class="container">
-                    <h1>Bienvenue sur VintedGooat</h1>
+    <main>
+        <!-- Section Accueil -->
+        <section id="home" class="section active">
+            <div class="container">
+                <div class="welcome-box">
+                    <h2>Bienvenue sur VintedGooat</h2>
                     <div class="features">
                         <div class="feature-card">
                             <h3>Simple d'utilisation</h3>
                             <p>Copiez-collez simplement le contenu de votre profil Vinted</p>
+                            <a href="https://www.vinted.fr" target="_blank" class="btn btn-outline">Aller sur Vinted</a>
                         </div>
                         <div class="feature-card">
                             <h3>100% Sécurisé</h3>
@@ -39,34 +42,50 @@
                         </div>
                     </div>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <section id="analyse-boutique" class="section-content" style="display: none;">
-                <div class="container">
+        <!-- Section Analyse Boutique -->
+        <section id="shop" class="section">
+            <div class="container">
+                <div class="analysis-box">
                     <h2>Analyse de Boutique</h2>
-                    <div class="analysis-form">
-                        <textarea id="shop-input" placeholder="Collez ici le contenu de votre profil Vinted..."></textarea>
+                    <div class="input-area">
+                        <textarea 
+                            id="shop-input" 
+                            placeholder="Collez ici le contenu de votre profil Vinted..."
+                        ></textarea>
                         <div class="button-group">
-                            <button id="analyze-shop" class="btn btn-primary">Analyser</button>
-                            <button id="reset-shop" class="btn btn-secondary">Nouvelle analyse</button>
+                            <button id="analyze-btn" class="btn btn-primary">
+                                Analyser
+                            </button>
+                            <button id="reset-btn" class="btn btn-secondary">
+                                Nouvelle analyse
+                            </button>
                         </div>
                     </div>
-                    <div id="shop-results" class="results-container"></div>
+                    <div id="results" class="results-area"></div>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <section id="analyse-pro" class="section-content" style="display: none;">
-                <div class="container">
+        <!-- Section Analyse Pro -->
+        <section id="pro" class="section">
+            <div class="container">
+                <div class="analysis-box">
                     <h2>Analyse Pro</h2>
-                    <div class="analysis-form">
-                        <textarea id="pro-input" placeholder="Collez ici votre historique de transactions..."></textarea>
-                        <button id="analyze-pro" class="btn btn-primary">Analyser</button>
+                    <div class="input-area">
+                        <textarea 
+                            id="pro-input" 
+                            placeholder="Collez ici votre historique de transactions..."
+                        ></textarea>
+                        <button class="btn btn-primary">Analyser</button>
                     </div>
-                    <div id="pro-results" class="results-container"></div>
                 </div>
-            </section>
-        </main>
-    </div>
-    <script type="module" src="/main.js"></script>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="./main.js"></script>
 </body>
 </html>
