@@ -1,90 +1,116 @@
 import '../css/style.css';
 
-// Attendre que le DOM soit chargé
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Application VintedGooat chargée');
-    initializeAnalysis();
+    initNavigation();
+    initAnalysis();
 });
 
-function initializeAnalysis() {
-    // Récupérer les éléments du DOM
-    const analyzeButton = document.getElementById('analyze-button');
-    const resetButton = document.getElementById('reset-button');
-    const inputTextarea = document.getElementById('profile-input');
-    const resultsContainer = document.getElementById('analysis-results');
+function initNavigation() {
+    const navButtons = document.querySelectorAll('.nav-btn');
+    const pages = document.querySelectorAll('.page');
 
-    console.log('Initialisation des boutons:', { analyzeButton, resetButton });
+    // Gérer la navigation
+    navButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetPage = button.getAttribute('data-page');
 
-    if (analyzeButton) {
-        analyzeButton.addEventListener('click', () => {
-            console.log('Bouton Analyser cliqué');
-            const text = inputTextarea?.value.trim();
-            
+            // Mettre à jour les boutons actifs
+            navButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            // Afficher la bonne page
+            pages.forEach(page => {
+                if (page.id === targetPage) {
+                    page.classList.remove('hidden');
+                } else {
+                    page.classList.add('hidden');
+                }
+            });
+        });
+    });
+
+    // Activer la page d'accueil par défaut
+    document.querySelector('[data-page="accueil"]').classList.add('active');
+}
+
+function initAnalysis() {
+    const analyzeBtn = document.getElementById('analyze-button');
+    const resetBtn = document.getElementById('reset-button');
+    const textarea = document.getElementById('profile-input');
+    const resultsDiv = document.getElementById('analysis-results');
+
+    if (analyzeBtn) {
+        analyzeBtn.addEventListener('click', () => {
+            const text = textarea?.value.trim();
             if (!text) {
-                alert('Veuillez coller le contenu du profil Vinted');
+                alert('Veuillez coller le contenu de votre profil Vinted');
                 return;
             }
 
             try {
-                const results = analyzeVintedProfile(text);
-                displayResults(results, resultsContainer);
+                const data = analyzeVintedProfile(text);
+                displayResults(data, resultsDiv);
             } catch (error) {
-                console.error('Erreur lors de l\'analyse:', error);
+                console.error('Erreur d\'analyse:', error);
                 alert('Une erreur est survenue lors de l\'analyse');
             }
         });
     }
 
-    if (resetButton) {
-        resetButton.addEventListener('click', () => {
-            console.log('Réinitialisation');
-            if (inputTextarea) inputTextarea.value = '';
-            if (resultsContainer) resultsContainer.innerHTML = '';
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            if (textarea) textarea.value = '';
+            if (resultsDiv) resultsDiv.innerHTML = '';
         });
     }
 }
 
 function analyzeVintedProfile(text) {
-    console.log('Analyse du texte en cours');
-    
-    // Extraction des données
     const data = {
         profile: extractProfileInfo(text),
         sales: extractSalesInfo(text),
         items: extractItems(text)
     };
-
-    console.log('Données extraites:', data);
     return data;
 }
 
 function extractProfileInfo(text) {
+    const info = {
+        shopName: '',
+        followers: 0,
+        following: 0,
+        rating: 0,
+        totalRatings: 0
+    };
+
     // Extraction du nom de la boutique
     const shopNameMatch = text.match(/^([^\n]+)(?=\nÀ propos)/m);
-    const shopName = shopNameMatch ? shopNameMatch[1].trim() : '';
+    if (shopNameMatch) {
+        info.shopName = shopNameMatch[1].trim();
+    }
 
     // Extraction des abonnés/abonnements
     const followersMatch = text.match(/(\d+)\s*Abonnés?/);
     const followingMatch = text.match(/(\d+)\s*Abonnements?/);
-    
-    // Extraction de la note et des évaluations
-    const ratingMatch = text.match(/(\d+\.\d+)\s*\(/);
-    const evaluationsMatch = text.match(/Évaluations des membres \((\d+)\)/);
-    const autoEvalMatch = text.match(/Évaluations automatiques \((\d+)\)/);
+    if (followersMatch) info.followers = parseInt(followersMatch[1]);
+    if (followingMatch) info.following = parseInt(followingMatch[1]);
 
-    return {
-        shopName,
-        followers: followersMatch ? parseInt(followersMatch[1]) : 0,
-        following: followingMatch ? parseInt(followingMatch[1]) : 0,
-        rating: ratingMatch ? parseFloat(ratingMatch[1]) : 0,
-        totalEvaluations: (evaluationsMatch ? parseInt(evaluationsMatch[1]) : 0) +
-                         (autoEvalMatch ? parseInt(autoEvalMatch[1]) : 0)
-    };
+    // Extraction des évaluations
+    const ratingsMatch = text.match(/Évaluations des membres \((\d+)\)/);
+    const autoEvalMatch = text.match(/Évaluations automatiques \((\d+)\)/);
+    if (ratingsMatch) info.totalRatings += parseInt(ratingsMatch[1]);
+    if (autoEvalMatch) info.totalRatings += parseInt(autoEvalMatch[1]);
+
+    // Note globale
+    const ratingMatch = text.match(/(\d+\.\d+)\s*\(/);
+    if (ratingMatch) info.rating = parseFloat(ratingMatch[1]);
+
+    return info;
 }
 
 function extractSalesInfo(text) {
     const sales = {
-        total: 0,
+        byDate: {},
         byCountry: {},
         recent: []
     };
@@ -93,19 +119,18 @@ function extractSalesInfo(text) {
     const datePattern = /il y a (\d+) (jour|jours|semaine|semaines|mois|an|ans)/g;
     let match;
     while ((match = datePattern.exec(text)) !== null) {
-        sales.total++;
-        sales.recent.push({
-            timeAgo: parseInt(match[1]),
-            unit: match[2]
-        });
+        const amount = parseInt(match[1]);
+        const unit = match[2];
+        
+        sales.recent.push({ timeAgo: amount, unit });
     }
 
     // Détection des pays par langue
     const languages = {
         'merci|parfait': 'France',
-        'grazie': 'Italie',
-        'thank you': 'Royaume-Uni',
+        'grazie|perfetto': 'Italie',
         'gracias|perfecto': 'Espagne',
+        'thank you': 'Royaume-Uni',
         'danke': 'Allemagne'
     };
 
@@ -140,18 +165,22 @@ function extractItems(text) {
 function displayResults(data, container) {
     if (!container) return;
 
-    console.log('Affichage des résultats:', data);
-
     const html = `
         <div class="results-grid">
             <div class="result-card">
                 <h3>Informations du Profil</h3>
                 <p>Boutique: ${data.profile.shopName}</p>
+                <p>Note: ${data.profile.rating.toFixed(1)}/5</p>
                 <p>Abonnés: ${data.profile.followers}</p>
-                <p>Note: ${data.profile.rating}/5</p>
-                <p>Total des ventes: ${data.profile.totalEvaluations}</p>
+                <p>Total des ventes: ${data.profile.totalRatings}</p>
             </div>
             
+            <div class="result-card">
+                <h3>Statistiques Articles</h3>
+                <p>Articles en vente: ${data.items.length}</p>
+                <p>Prix moyen: ${(data.items.reduce((sum, item) => sum + item.price, 0) / data.items.length).toFixed(2)}€</p>
+            </div>
+
             <div class="result-card">
                 <h3>Ventes par Pays</h3>
                 <ul>
@@ -161,7 +190,7 @@ function displayResults(data, container) {
                         ).join('')}
                 </ul>
             </div>
-            
+
             <div class="result-card">
                 <h3>Ventes Récentes</h3>
                 <ul>
