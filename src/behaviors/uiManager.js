@@ -1,208 +1,147 @@
-// UI Manager module
 let charts = {};
 
-export function initializeUI() {
-    setupNavigation();
-    setupResetButtons();
-    setupInputValidation();
-}
+export function initNavigation() {
+    const navButtons = document.querySelectorAll('.nav-btn');
+    const pages = document.querySelectorAll('.page');
 
-function setupNavigation() {
-    const navLinks = document.querySelectorAll('.nav-links a');
-    const sections = document.querySelectorAll('section');
-
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const targetId = link.getAttribute('href').substring(1);
-            
-            // Update active states
-            navLinks.forEach(l => l.classList.remove('active'));
-            link.classList.add('active');
-            
-            // Show target section
-            sections.forEach(section => {
-                section.style.display = section.id === targetId ? 'block' : 'none';
+    navButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetPage = button.getAttribute('data-page');
+            navButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            pages.forEach(page => {
+                page.classList.toggle('hidden', page.id !== targetPage);
             });
         });
     });
 }
 
-function setupResetButtons() {
-    const resetButtons = document.querySelectorAll('.btn-reset');
-    resetButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const targetForm = button.closest('.analysis-form');
-            if (targetForm) {
-                targetForm.reset();
-                const resultsContainer = targetForm.nextElementSibling;
-                if (resultsContainer && resultsContainer.classList.contains('results-container')) {
-                    resultsContainer.innerHTML = '';
-                    resultsContainer.classList.remove('active');
+export function displayResults(data, container) {
+    if (!container) return;
+
+    // Nettoyer les graphiques existants avant de créer de nouveaux
+    destroyCharts();
+
+    container.innerHTML = `
+        <div class="results-grid">
+            <div class="result-card">
+                <h3>Informations du Profil</h3>
+                <p>Boutique: ${data.profile.shopName}</p>
+                <p>Note: ${data.profile.rating.toFixed(1)}/5</p>
+                <p>Abonnés: ${data.profile.followers}</p>
+                <p>Total des ventes: ${data.profile.totalRatings}</p>
+            </div>
+            
+            <div class="result-card">
+                <h3>Statistiques Articles</h3>
+                <p>Articles en vente: ${data.totalArticles || data.items.length}</p>
+                <p>Prix moyen: ${(data.metrics?.averagePrice || 0).toFixed(2)}€</p>
+            </div>
+
+            <div class="result-card">
+                <h3>Graphique des Ventes par Pays</h3>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="countryChart"></canvas>
+                </div>
+            </div>
+
+            <div class="result-card">
+                <h3>Évolution des Ventes</h3>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    `;
+
+    container.classList.add('active');
+
+    // Attendre que le DOM soit mis à jour avant de créer les graphiques
+    setTimeout(() => createCharts(data), 0);
+}
+
+function createCharts(data) {
+    // Graphique des ventes par pays
+    const countryCtx = document.getElementById('countryChart');
+    if (countryCtx && data.sales.byCountry && Object.keys(data.sales.byCountry).length > 0) {
+        const countryData = {
+            labels: Object.keys(data.sales.byCountry),
+            datasets: [{
+                data: Object.values(data.sales.byCountry),
+                backgroundColor: [
+                    '#09B1BA',
+                    '#FF6B6B',
+                    '#4ECDC4',
+                    '#45B7D1',
+                    '#96CEB4'
+                ]
+            }]
+        };
+
+        charts.country = new Chart(countryCtx, {
+            type: 'doughnut',
+            data: countryData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
                 }
             }
         });
-    });
-}
+    }
 
-function setupInputValidation() {
-    const textAreas = document.querySelectorAll('textarea');
-    textAreas.forEach(textarea => {
-        textarea.addEventListener('paste', (e) => {
-            setTimeout(() => {
-                validateInput(textarea);
-            }, 0);
+    // Graphique de l'évolution des ventes
+    const salesCtx = document.getElementById('salesChart');
+    if (salesCtx && data.sales.recent && data.sales.recent.length > 0) {
+        const salesData = prepareSalesData(data.sales.recent);
+
+        charts.sales = new Chart(salesCtx, {
+            type: 'line',
+            data: {
+                labels: salesData.labels,
+                datasets: [{
+                    label: 'Nombre de ventes',
+                    data: salesData.data,
+                    borderColor: '#09B1BA',
+                    backgroundColor: 'rgba(9, 177, 186, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
         });
-    });
-}
-
-function validateInput(textarea) {
-    const text = textarea.value.trim();
-    const submitBtn = textarea.closest('.analysis-form').querySelector('.btn-primary');
-    
-    if (text.length < 50) { // Minimum length validation
-        submitBtn.disabled = true;
-        showValidationError(textarea, 'Le contenu collé semble trop court');
-    } else {
-        submitBtn.disabled = false;
-        clearValidationError(textarea);
     }
 }
 
-export function displayResults(type, data) {
-    const container = document.getElementById(`${type}-results`);
-    if (!container) return;
-
-    // Clear previous results
-    container.innerHTML = '';
-    destroyCharts();
-
-    switch (type) {
-        case 'shop':
-            displayShopResults(container, data);
-            break;
-        case 'pro':
-            displayProResults(container, data);
-            break;
-    }
-
-    container.classList.add('active');
-}
-
-function displayShopResults(container, data) {
-    // Métriques principales
-    const metricsHtml = `
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <h3>Score Global</h3>
-                <div class="score">${Math.round(data.metrics.qualityScore)}/100</div>
-            </div>
-            <div class="metric-card">
-                <h3>Ventes</h3>
-                <div class="value">${data.sales.total}</div>
-                <div class="label">transactions</div>
-            </div>
-            <div class="metric-card">
-                <h3>Prix Moyen</h3>
-                <div class="value">${data.metrics.avgPrice.toFixed(2)}€</div>
-            </div>
-        </div>
-    `;
-
-    // Graphiques
-    const chartsHtml = `
-        <div class="charts-container">
-            <div class="chart-wrapper">
-                <h3>Évolution des Ventes</h3>
-                <canvas id="salesChart"></canvas>
-            </div>
-            <div class="chart-wrapper">
-                <h3>Répartition par Pays</h3>
-                <canvas id="countryChart"></canvas>
-            </div>
-        </div>
-    `;
-
-    container.innerHTML = metricsHtml + chartsHtml;
-
-    // Création des graphiques
-    createCharts(data);
-}
-
-function displayProResults(container, data) {
-    const { metrics, summary } = data;
-
-    const summaryHtml = `
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <h3>Chiffre d'Affaires</h3>
-                <div class="value">${metrics.totalRevenue.toFixed(2)}€</div>
-            </div>
-            <div class="metric-card">
-                <h3>Bénéfice Net</h3>
-                <div class="value">${metrics.netProfit.toFixed(2)}€</div>
-            </div>
-            <div class="metric-card">
-                <h3>Panier Moyen</h3>
-                <div class="value">${metrics.averageOrderValue.toFixed(2)}€</div>
-            </div>
-        </div>
-        <div class="charts-container">
-            <div class="chart-wrapper">
-                <h3>Évolution des Ventes</h3>
-                <canvas id="revenueChart"></canvas>
-            </div>
-            <div class="chart-wrapper">
-                <h3>Répartition des Dépenses</h3>
-                <canvas id="expensesChart"></canvas>
-            </div>
-        </div>
-    `;
-
-    container.innerHTML = summaryHtml;
-    createProCharts(data);
+function prepareSalesData(recentSales) {
+    const sortedSales = recentSales.slice().reverse();
+    return {
+        labels: sortedSales.map(sale => `Il y a ${sale.timeAgo} ${sale.unit}`),
+        data: sortedSales.map((_, index) => index + 1)
+    };
 }
 
 function destroyCharts() {
     Object.values(charts).forEach(chart => {
-        if (chart && typeof chart.destroy === 'function') {
-            chart.destroy();
-        }
+        if (chart) chart.destroy();
     });
     charts = {};
 }
 
-function showValidationError(element, message) {
-    let errorDiv = element.nextElementSibling;
-    if (!errorDiv || !errorDiv.classList.contains('error-message')) {
-        errorDiv = document.createElement('div');
-        errorDiv.classList.add('error-message');
-        element.parentNode.insertBefore(errorDiv, element.nextSibling);
-    }
-    errorDiv.textContent = message;
-}
-
-function clearValidationError(element) {
-    const errorDiv = element.nextElementSibling;
-    if (errorDiv && errorDiv.classList.contains('error-message')) {
-        errorDiv.remove();
-    }
-}
-
-export function showLoading(type) {
-    const container = document.getElementById(`${type}-results`);
-    if (container) {
-        container.innerHTML = '<div class="loading">Analyse en cours...</div>';
-        container.classList.add('active');
-    }
-}
-
-export function hideLoading(type) {
-    const container = document.getElementById(`${type}-results`);
-    if (container) {
-        const loading = container.querySelector('.loading');
-        if (loading) {
-            loading.remove();
-        }
-    }
+export function clearResults() {
+    destroyCharts();
 }
