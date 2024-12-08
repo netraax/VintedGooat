@@ -4,16 +4,33 @@ export function initNavigation() {
     const navButtons = document.querySelectorAll('.nav-btn');
     const pages = document.querySelectorAll('.page');
 
+    // Gérer la navigation
     navButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetPage = button.getAttribute('data-page');
+            console.log('Navigation vers:', targetPage); // Debug
+
+            // Mettre à jour les boutons actifs
             navButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
+
+            // Afficher la bonne page
             pages.forEach(page => {
-                page.classList.toggle('hidden', page.id !== targetPage);
+                if (page.id === targetPage) {
+                    page.classList.remove('hidden');
+                } else {
+                    page.classList.add('hidden');
+                }
+                console.log(`Page ${page.id}: ${page.classList.contains('hidden') ? 'cachée' : 'visible'}`); // Debug
             });
         });
     });
+
+    // S'assurer que la page principale est visible par défaut
+    const mainPage = document.getElementById('main');
+    if (mainPage) {
+        mainPage.classList.remove('hidden');
+    }
 }
 
 export function displayResults(data, container) {
