@@ -1,194 +1,190 @@
-import './css/style.css';  // Changé de '../css/style.css'
-import { analyzeProfile } from './src/behaviors/profileParser.js';  // Changé de '../behaviors/profileParser.js'
-import Chart from 'chart.js/auto';
+import '../css/style.css'
 
+// Initialisation de l'application
 document.addEventListener('DOMContentLoaded', () => {
-    initNavigation();
-    initAnalysis();
-    initProAnalysis();
-});
+    console.log('Application VintedGooat chargée')
+    initializeApp()
+})
 
-function initNavigation() {
-    const navButtons = document.querySelectorAll('.nav-btn');
-    const pages = document.querySelectorAll('.page');
-
-    navButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const targetPage = button.getAttribute('data-page');
-
-            // Mise à jour des boutons actifs
-            navButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-
-            // Affichage de la bonne page
-            pages.forEach(page => {
-                if (page.id === targetPage) {
-                    page.classList.remove('hidden');
-                } else {
-                    page.classList.add('hidden');
-                }
-            });
-        });
-    });
-
-    // Activer la page d'accueil par défaut
-    document.querySelector('[data-page="accueil"]').classList.add('active');
+// Fonction principale d'initialisation
+function initializeApp() {
+    setupNavigation()
+    setupAnalysisFeatures()
 }
 
-function initAnalysis() {
-    const analyzeBtn = document.getElementById('analyze-button');
-    const resetBtn = document.getElementById('reset-button');
-    const textarea = document.getElementById('profile-input');
-    const resultsDiv = document.getElementById('analysis-results');
+// Configuration de la navigation
+function setupNavigation() {
+    const sections = {
+        accueil: document.getElementById('accueil'),
+        'analyse-boutique': document.getElementById('analyse-boutique'),
+        'analyse-pro': document.getElementById('analyse-pro')
+    }
 
-    if (analyzeBtn) {
-        analyzeBtn.addEventListener('click', () => {
-            const text = textarea?.value.trim();
+    // Gestion des clics sur les liens de navigation
+    document.querySelectorAll('nav a').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault()
+            const target = link.getAttribute('href').substring(1)
+            
+            // Cacher toutes les sections
+            Object.values(sections).forEach(section => {
+                if (section) section.style.display = 'none'
+            })
+            
+            // Afficher la section cible
+            if (sections[target]) {
+                sections[target].style.display = 'block'
+            }
+            
+            // Mise à jour de la classe active
+            document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'))
+            link.classList.add('active')
+        })
+    })
+}
+
+// Configuration des fonctionnalités d'analyse
+function setupAnalysisFeatures() {
+    const analyzeShopBtn = document.getElementById('analyze-shop')
+    const resetShopBtn = document.getElementById('reset-shop')
+    const shopInput = document.getElementById('shop-input')
+    const shopResults = document.getElementById('shop-results')
+
+    if (analyzeShopBtn) {
+        analyzeShopBtn.addEventListener('click', () => {
+            const text = shopInput ? shopInput.value.trim() : ''
             if (!text) {
-                alert('Veuillez coller le contenu de votre profil Vinted');
-                return;
+                showNotification('Veuillez coller le contenu du profil Vinted', 'error')
+                return
             }
-
-            try {
-                const analysisResults = analyzeProfile(text);
-                displayResults(analysisResults, resultsDiv);
-                createCharts(analysisResults);
-            } catch (error) {
-                console.error('Erreur d\'analyse:', error);
-                alert('Une erreur est survenue lors de l\'analyse');
-            }
-        });
+            analyzeShopProfile(text)
+        })
     }
 
-    if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-            if (textarea) textarea.value = '';
-            if (resultsDiv) resultsDiv.innerHTML = '';
-            // Nettoyer les graphiques si présents
-            const chartContainers = document.querySelectorAll('.chart-container');
-            chartContainers.forEach(container => container.remove());
-        });
+    if (resetShopBtn) {
+        resetShopBtn.addEventListener('click', () => {
+            if (shopInput) shopInput.value = ''
+            if (shopResults) {
+                shopResults.innerHTML = ''
+                shopResults.classList.remove('active')
+            }
+            showNotification('Analyse réinitialisée', 'info')
+        })
     }
 }
 
-function initProAnalysis() {
-    const proInput = document.getElementById('pro-input');
-    const proResults = document.getElementById('pro-results');
-    
-    if (proInput && proResults) {
-        // Logique pour l'analyse pro à implémenter
+// Fonction d'analyse du profil boutique
+function analyzeShopProfile(text) {
+    try {
+        // Extraction des informations
+        const data = extractProfileData(text)
+        
+        // Affichage des résultats
+        displayResults(data)
+        
+        showNotification('Analyse terminée avec succès', 'success')
+    } catch (error) {
+        console.error('Erreur lors de l\'analyse:', error)
+        showNotification('Erreur lors de l\'analyse', 'error')
     }
 }
 
-function displayResults(data, container) {
-    if (!container) return;
+// Extraction des données du profil
+function extractProfileData(text) {
+    const data = {
+        evaluations: [],
+        sales: 0,
+        dates: [],
+        countries: {}
+    }
+
+    // Extraction des évaluations et dates
+    const evalPattern = /il y a (\d+) (jour|mois|an)/g
+    let match
+    while ((match = evalPattern.exec(text)) !== null) {
+        const timeAgo = parseInt(match[1])
+        const unit = match[2]
+        data.evaluations.push({ timeAgo, unit })
+        data.sales++
+    }
+
+    // Détection des pays par la langue
+    const langPatterns = {
+        'merci': 'France',
+        'thank you': 'Angleterre',
+        'grazie': 'Italie',
+        'gracias': 'Espagne',
+        'danke': 'Allemagne'
+    }
+
+    Object.entries(langPatterns).forEach(([phrase, country]) => {
+        const regex = new RegExp(phrase, 'gi')
+        const count = (text.match(regex) || []).length
+        if (count > 0) {
+            data.countries[country] = count
+        }
+    })
+
+    return data
+}
+
+// Affichage des résultats
+function displayResults(data) {
+    const resultsContainer = document.getElementById('shop-results')
+    if (!resultsContainer) return
 
     const html = `
         <div class="results-grid">
             <div class="result-card">
-                <h3>Informations du Profil</h3>
-                <p>Boutique: ${data.profile.shopName}</p>
-                <p>Note: ${data.profile.rating.toFixed(1)}/5</p>
-                <p>Abonnés: ${data.profile.followers}</p>
-                <p>Total des évaluations: ${data.profile.totalRatings}</p>
-                <p>Évaluations membres: ${data.profile.memberRatings}</p>
-                <p>Évaluations auto: ${data.profile.autoRatings}</p>
+                <h3>Ventes Totales</h3>
+                <div class="value">${data.sales}</div>
             </div>
             
             <div class="result-card">
-                <h3>Statistiques Articles</h3>
-                <p>Prix moyen: ${data.metrics.averagePrice.toFixed(2)}€</p>
-                <p>Revenu total estimé: ${data.metrics.totalRevenue.toFixed(2)}€</p>
-                <p>Vitesse de vente: ${data.metrics.salesVelocity.toFixed(1)} ventes/semaine</p>
+                <h3>Répartition par Pays</h3>
+                <div class="country-list">
+                    ${Object.entries(data.countries)
+                        .map(([country, count]) => `
+                            <div class="country-item">
+                                <span>${country}</span>
+                                <span>${count} vente${count > 1 ? 's' : ''}</span>
+                            </div>
+                        `).join('')}
+                </div>
             </div>
 
             <div class="result-card">
-                <h3>Ventes par Pays</h3>
-                <div id="countryChartContainer" class="chart-container"></div>
-                <ul>
-                    ${Object.entries(data.sales.byCountry)
-                        .map(([country, count]) => 
-                            `<li>${country}: ${count} vente${count > 1 ? 's' : ''}</li>`
-                        ).join('')}
-                </ul>
-            </div>
-
-            <div class="result-card">
-                <h3>Ventes Récentes</h3>
-                <div id="salesChartContainer" class="chart-container"></div>
-                <ul>
-                    ${data.sales.recentSales.slice(0, 5)
-                        .map(sale => 
-                            `<li>Il y a ${sale.amount} ${sale.unit}</li>`
-                        ).join('')}
-                </ul>
+                <h3>Activité Récente</h3>
+                <div class="activity-list">
+                    ${data.evaluations.slice(0, 5)
+                        .map(eval => `
+                            <div class="activity-item">
+                                <span>Il y a ${eval.timeAgo} ${eval.unit}${eval.timeAgo > 1 ? 's' : ''}</span>
+                            </div>
+                        `).join('')}
+                </div>
             </div>
         </div>
-    `;
+    `
 
-    container.innerHTML = html;
+    resultsContainer.innerHTML = html
+    resultsContainer.classList.add('active')
 }
 
-function createCharts(data) {
-    // Graphique des ventes par pays
-    const countryData = Object.entries(data.sales.byCountry);
-    new Chart(
-        document.getElementById('countryChartContainer'),
-        {
-            type: 'doughnut',
-            data: {
-                labels: countryData.map(([country]) => country),
-                datasets: [{
-                    data: countryData.map(([_, count]) => count),
-                    backgroundColor: [
-                        '#FF6384',
-                        '#36A2EB',
-                        '#FFCE56',
-                        '#4BC0C0',
-                        '#9966FF'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        }
-    );
+// Système de notifications
+function showNotification(message, type = 'info') {
+    const notif = document.createElement('div')
+    notif.className = `notification ${type}`
+    notif.textContent = message
 
-    // Graphique des ventes récentes
-    const salesDates = Object.entries(data.sales.byDate).slice(-10);
-    new Chart(
-        document.getElementById('salesChartContainer'),
-        {
-            type: 'line',
-            data: {
-                labels: salesDates.map(([date]) => date),
-                datasets: [{
-                    label: 'Ventes par jour',
-                    data: salesDates.map(([_, count]) => count),
-                    borderColor: '#36A2EB',
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        }
-    );
+    document.body.appendChild(notif)
+
+    // Animation d'entrée
+    setTimeout(() => notif.classList.add('visible'), 100)
+
+    // Suppression automatique
+    setTimeout(() => {
+        notif.classList.remove('visible')
+        setTimeout(() => notif.remove(), 300)
+    }, 3000)
 }
-
-export {
-    initNavigation,
-    initAnalysis,
-    initProAnalysis
-};
