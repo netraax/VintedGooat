@@ -19,24 +19,51 @@ body {
     padding: 0 1rem;
 }
 
-.nav-links {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+.nav-container {
     display: flex;
-    gap: 2rem;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.nav-links a {
+.logo {
     color: white;
     text-decoration: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
+    font-size: 1.5rem;
+    font-weight: bold;
 }
 
-.nav-links a:hover,
-.nav-links a.active {
+.nav-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.nav-btn {
+    background: none;
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+}
+
+.nav-btn:hover,
+.nav-btn.active {
     background-color: rgba(255,255,255,0.2);
+}
+
+/* Page Management */
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+.hidden {
+    display: none !important;
 }
 
 /* Sections */
@@ -44,7 +71,40 @@ body {
     padding: 2rem 0;
 }
 
+/* Features */
+.features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.feature-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+}
+
+.feature-card h2 {
+    color: #09B1BA;
+    margin-bottom: 1rem;
+}
+
 /* Forms */
+.analysis-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin: 2rem 0;
+}
+
 textarea {
     width: 100%;
     min-height: 200px;
@@ -53,6 +113,7 @@ textarea {
     border-radius: 8px;
     margin-bottom: 1rem;
     font-family: inherit;
+    resize: vertical;
 }
 
 .button-group {
@@ -66,6 +127,7 @@ textarea {
     border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
+    transition: all 0.3s ease;
 }
 
 .btn-primary {
@@ -73,12 +135,28 @@ textarea {
     color: white;
 }
 
+.btn-primary:hover {
+    background-color: #078e96;
+}
+
 .btn-secondary {
     background-color: #f0f0f0;
     color: #333;
 }
 
+.btn-secondary:hover {
+    background-color: #e0e0e0;
+}
+
 /* Results */
+.results-container {
+    display: none;
+}
+
+.results-container.active {
+    display: block;
+}
+
 .results-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -118,4 +196,22 @@ textarea {
 
 .result-card li:last-child {
     border-bottom: none;
+}
+
+/* Chart Container */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .button-group {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+    }
 }
