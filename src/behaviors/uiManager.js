@@ -26,7 +26,6 @@ export function initNavigation() {
             });
         });
     });
-}
 
     // S'assurer que la page principale est visible par défaut
     const mainPage = document.getElementById('main');
