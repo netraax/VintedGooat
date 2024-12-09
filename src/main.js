@@ -190,9 +190,7 @@ function initPDFExport() {
         button.addEventListener('click', () => {
             try {
                 const section = button.closest('section');
-                if (!section) {
-                    throw new Error('Section non trouvée');
-                }
+                if (!section) return;
 
                 const resultsContainer = section.querySelector('.results-container');
                 if (!resultsContainer || !resultsContainer.classList.contains('active')) {
@@ -200,25 +198,30 @@ function initPDFExport() {
                     return;
                 }
 
+                // Récupérer directement les données de l'analyse précédente
                 let exportData;
-                const pageId = section.id;
 
-                // Récupération des données en fonction du type de page
-                switch (pageId) {
-                    case 'main':
-                        exportData = extractMainData(resultsContainer);
-                        break;
-                    case 'compare':
-                        exportData = extractComparisonData(resultsContainer);
-                        break;
-                    case 'analyse-pro':
-                        exportData = extractProData(resultsContainer);
-                        break;
-                    default:
-                        throw new Error('Type de page non reconnu');
+                if (section.id === 'main') {
+                    // Pour l'analyse standard
+                    const text = document.getElementById('profile-input').value;
+                    if (text) {
+                        exportData = analyzeProfile(text);
+                    }
+                } else if (section.id === 'compare') {
+                    // Pour la comparaison
+                    const shop1Text = document.getElementById('shop1-input').value;
+                    const shop2Text = document.getElementById('shop2-input').value;
+                    if (shop1Text && shop2Text) {
+                        exportData = compareShops(shop1Text, shop2Text);
+                    }
                 }
 
-                exportToPDF(exportData, pageId === 'compare' ? 'comparison' : pageId === 'analyse-pro' ? 'pro' : 'single');
+                if (!exportData) {
+                    throw new Error('Données non disponibles');
+                }
+
+                // Export en PDF
+                exportToPDF(exportData, section.id === 'compare' ? 'comparison' : 'single');
                 showNotification('Export PDF généré avec succès', 'success');
             } catch (error) {
                 console.error('Erreur lors de l\'export PDF:', error);
