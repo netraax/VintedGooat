@@ -90,7 +90,7 @@ export function displayResults(data, container) {
             <!-- Évolution des Ventes -->
             <div class="result-card">
                 <h3>📈 Évolution des Ventes</h3>
-                <div class="chart-container">
+                <div class="salesEvolutionChart">
                     <canvas id="salesChart"></canvas>
                 </div>
             </div>
