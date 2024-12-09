@@ -204,36 +204,21 @@ function initPDFExport() {
                 const pageId = section.id;
 
                 // Récupération des données en fonction du type de page
-                if (pageId === 'main') {
-                    // Extraire les données depuis les éléments HTML
-                    const profileCard = resultsContainer.querySelector('[data-section="profile-info"]');
-                    const statsCard = resultsContainer.querySelector('[data-section="stats-info"]');
-                    
-                    if (!profileCard || !statsCard) {
-                        throw new Error('Données d\'analyse introuvables');
-                    }
-
-                    exportData = {
-                        profile: {
-                            shopName: extractValue(profileCard, 'Boutique'),
-                            rating: parseFloat(extractValue(profileCard, 'Note')),
-                            followers: parseInt(extractValue(profileCard, 'Abonnés')),
-                            totalRatings: parseInt(extractValue(profileCard, 'Total des ventes'))
-                        },
-                        metrics: {
-                            totalItems: parseInt(extractValue(statsCard, 'Articles en vente')),
-                            itemsSold: parseInt(extractValue(statsCard, 'Articles vendus')),
-                            averagePrice: parseFloat(extractValue(statsCard, 'Prix moyen')),
-                            conversionRate: parseFloat(extractValue(statsCard, 'Taux de conversion'))
-                        }
-                    };
-                } else if (pageId === 'compare') {
-                    // Pour la comparaison, on utilise directement les données affichées dans le tableau
-                    exportData = extractComparisonData(resultsContainer);
+                switch (pageId) {
+                    case 'main':
+                        exportData = extractMainData(resultsContainer);
+                        break;
+                    case 'compare':
+                        exportData = extractComparisonData(resultsContainer);
+                        break;
+                    case 'analyse-pro':
+                        exportData = extractProData(resultsContainer);
+                        break;
+                    default:
+                        throw new Error('Type de page non reconnu');
                 }
 
-                // Export du PDF avec les données extraites
-                exportToPDF(exportData, pageId === 'compare' ? 'comparison' : 'single');
+                exportToPDF(exportData, pageId === 'compare' ? 'comparison' : pageId === 'analyse-pro' ? 'pro' : 'single');
                 showNotification('Export PDF généré avec succès', 'success');
             } catch (error) {
                 console.error('Erreur lors de l\'export PDF:', error);
@@ -243,12 +228,33 @@ function initPDFExport() {
     });
 }
 
-// Fonction utilitaire pour extraire les valeurs
-function extractValue(element, label) {
-    const strongElement = element.querySelector(`p:contains("${label}:") strong`);
-    if (!strongElement) return '';
-    const value = strongElement.textContent.trim();
-    return value.replace(/[€%]/g, ''); // Enlève les symboles € et %
+// Fonction pour extraire les données de la page principale
+function extractMainData(container) {
+    const cards = container.querySelectorAll('.result-card');
+    const profile = {};
+    const metrics = {};
+
+    cards.forEach(card => {
+        card.querySelectorAll('p').forEach(p => {
+            const text = p.textContent;
+            const strong = p.querySelector('strong');
+            if (strong) {
+                const [label, value] = [
+                    text.split(':')[0].trim(),
+                    strong.textContent.replace(/[€%]/g, '').trim()
+                ];
+                
+                if (text.includes('Boutique') || text.includes('Note') || 
+                    text.includes('Abonnés') || text.includes('Total des ventes')) {
+                    profile[label] = isNaN(value) ? value : parseFloat(value);
+                } else {
+                    metrics[label] = isNaN(value) ? value : parseFloat(value);
+                }
+            }
+        });
+    });
+
+    return { profile, metrics };
 }
 
 // Fonction pour extraire les données de comparaison
@@ -256,24 +262,63 @@ function extractComparisonData(container) {
     const table = container.querySelector('.comparison-table');
     if (!table) throw new Error('Tableau de comparaison introuvable');
 
-    const rows = Array.from(table.querySelectorAll('tbody tr'));
-    const [shop1Name, shop2Name] = Array.from(table.querySelectorAll('thead th')).slice(1, 3).map(th => th.textContent);
+    const headerCells = table.querySelectorAll('thead th');
+    const shop1Name = headerCells[1].textContent;
+    const shop2Name = headerCells[2].textContent;
 
     const shop1 = { profile: { shopName: shop1Name }, metrics: {} };
     const shop2 = { profile: { shopName: shop2Name }, metrics: {} };
     const comparison = {};
 
-    // Extraction des données ligne par ligne
-    rows.forEach(row => {
-        const cells = Array.from(row.querySelectorAll('td'));
+    table.querySelectorAll('tbody tr').forEach(row => {
+        const cells = row.querySelectorAll('td');
         const metric = cells[0].textContent.toLowerCase().replace(/ /g, '_');
-        shop1.metrics[metric] = parseFloat(cells[1].textContent);
-        shop2.metrics[metric] = parseFloat(cells[2].textContent);
-        comparison[metric] = {
-            difference: parseFloat(cells[3].textContent.split('(')[0]),
-            percentage: parseFloat(cells[3].textContent.match(/\((.*?)%\)/)[1])
-        };
+        const value1 = parseFloat(cells[1].textContent);
+        const value2 = parseFloat(cells[2].textContent);
+        const diffText = cells[3].textContent;
+        
+        shop1.metrics[metric] = value1;
+        shop2.metrics[metric] = value2;
+        
+        if (diffText) {
+            const [diff, percent] = diffText.split('(');
+            comparison[metric] = {
+                difference: parseFloat(diff),
+                percentage: parseFloat(percent.replace(/[%)]/g, ''))
+            };
+        }
     });
 
     return { shop1, shop2, comparison };
+}
+
+// Fonction pour extraire les données pro
+function extractProData(container) {
+    const cards = container.querySelectorAll('.result-card');
+    const data = {
+        financials: {},
+        metrics: {}
+    };
+
+    cards.forEach(card => {
+        card.querySelectorAll('p').forEach(p => {
+            const text = p.textContent;
+            const strong = p.querySelector('strong');
+            if (strong) {
+                const [label, value] = [
+                    text.split(':')[0].trim(),
+                    strong.textContent.replace(/[€%]/g, '').trim()
+                ];
+                
+                if (text.includes('Chiffre') || text.includes('Dépenses') || 
+                    text.includes('Solde') || text.includes('marketing')) {
+                    data.financials[label] = parseFloat(value);
+                } else {
+                    data.metrics[label] = parseFloat(value);
+                }
+            }
+        });
+    });
+
+    return data;
 }
