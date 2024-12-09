@@ -2,6 +2,34 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
+// Fonctions utilitaires
+function formatValue(value, suffix = '') {
+    if (typeof value !== 'number') return '0' + suffix;
+    return value.toFixed(2) + suffix;
+}
+
+function formatDifference(diffObj, suffix = '') {
+    if (!diffObj) return '0 (0%)';
+    return `${diffObj.difference}${suffix} (${diffObj.percentage}%)`;
+}
+
+function formatMetricName(metric) {
+    return metric.split('_').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+}
+
+function getColorFromIndex(index, colors) {
+    const baseColors = [
+        colors.primary,
+        colors.accent,
+        [70, 150, 150],  // Turquoise foncé
+        [150, 70, 150],  // Violet
+        [150, 150, 70]   // Jaune foncé
+    ];
+    return baseColors[index % baseColors.length];
+}
+
 export function exportToPDF(data, type = 'single') {
     const doc = new jsPDF();
     
@@ -101,126 +129,6 @@ function generateSingleShopReport(doc, data, startY, colors) {
     
     currentY = doc.lastAutoTable.finalY + 20;
 
-    function generateComparisonReport(doc, data, startY, colors) {
-    let currentY = startY;
-    const { shop1, shop2, comparison } = data;
-    
-    // Titre de la comparaison
-    doc.setFontSize(18);
-    doc.setTextColor(...colors.primary);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Comparaison des Boutiques', 15, currentY);
-    currentY += 15;
-
-    // Sous-titre avec les noms des boutiques
-    doc.setFontSize(12);
-    doc.setTextColor(...colors.secondary);
-    doc.text(`${shop1.profile.shopName} vs ${shop2.profile.shopName}`, 15, currentY);
-    currentY += 15;
-
-    // Tableau de comparaison
-    doc.autoTable({
-        startY: currentY,
-        head: [[
-            'Métrique',
-            shop1.profile.shopName,
-            shop2.profile.shopName,
-            'Différence'
-        ]],
-        body: [
-            ['Abonnés',
-                shop1.metrics.abonnés?.toString() || '0',
-                shop2.metrics.abonnés?.toString() || '0',
-                formatDifference(comparison.abonnés)
-            ],
-            ['Note moyenne',
-                formatValue(shop1.metrics.note_moyenne, '/5'),
-                formatValue(shop2.metrics.note_moyenne, '/5'),
-                formatDifference(comparison.note_moyenne)
-            ],
-            ['Articles vendus',
-                shop1.metrics.articles_vendus?.toString() || '0',
-                shop2.metrics.articles_vendus?.toString() || '0',
-                formatDifference(comparison.articles_vendus)
-            ],
-            ['Prix moyen',
-                formatValue(shop1.metrics.prix_moyen, '€'),
-                formatValue(shop2.metrics.prix_moyen, '€'),
-                formatDifference(comparison.prix_moyen, '€')
-            ]
-        ],
-        headStyles: {
-            fillColor: colors.primary,
-            textColor: [255, 255, 255],
-            fontStyle: 'bold'
-        },
-        alternateRowStyles: {
-            fillColor: [250, 250, 250]
-        },
-        styles: {
-            fontSize: 11,
-            cellPadding: 5
-        }
-    });
-
-    currentY = doc.lastAutoTable.finalY + 20;
-
-    // Graphique de comparaison (barres horizontales)
-    const metrics = ['abonnés', 'articles_vendus'];
-    const barHeight = 20;
-    const barGap = 10;
-    const maxWidth = 160;
-
-    doc.setFontSize(14);
-    doc.setTextColor(...colors.primary);
-    doc.text('Comparaison Visuelle', 15, currentY);
-    currentY += 15;
-
-    metrics.forEach((metric, index) => {
-        const value1 = shop1.metrics[metric] || 0;
-        const value2 = shop2.metrics[metric] || 0;
-        const maxValue = Math.max(value1, value2);
-        
-        // Titre de la métrique
-        doc.setFontSize(10);
-        doc.setTextColor(...colors.secondary);
-        doc.text(formatMetricName(metric), 15, currentY);
-
-        // Barre boutique 1
-        const width1 = (value1 / maxValue) * maxWidth;
-        doc.setFillColor(...colors.primary);
-        doc.rect(50, currentY - 7, width1, barHeight/2, 'F');
-        doc.text(value1.toString(), 50 + width1 + 5, currentY - 2);
-
-        // Barre boutique 2
-        const width2 = (value2 / maxValue) * maxWidth;
-        doc.setFillColor(...colors.accent);
-        doc.rect(50, currentY - 7 + barHeight/2, width2, barHeight/2, 'F');
-        doc.text(value2.toString(), 50 + width2 + 5, currentY + 8);
-
-        currentY += barHeight + barGap;
-    });
-
-    return currentY;
-}
-
-// Fonctions utilitaires
-function formatValue(value, suffix = '') {
-    if (typeof value !== 'number') return '0' + suffix;
-    return value.toFixed(2) + suffix;
-}
-
-function formatDifference(diffObj, suffix = '') {
-    if (!diffObj) return '0 (0%)';
-    return `${diffObj.difference}${suffix} (${diffObj.percentage}%)`;
-}
-
-function formatMetricName(metric) {
-    return metric.split('_').map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ');
-}
-    
     // Section Top Marques
     if (data.metrics.topBrands) {
         doc.setFontSize(18);
@@ -286,22 +194,101 @@ function formatMetricName(metric) {
 }
 
 function generateComparisonReport(doc, data, startY, colors) {
-    // ... Code existant pour la comparaison ...
-    return startY;
+    let currentY = startY;
+    const { shop1, shop2, comparison } = data;
+    
+    // Titre de la comparaison
+    doc.setFontSize(18);
+    doc.setTextColor(...colors.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Comparaison des Boutiques', 15, currentY);
+    currentY += 15;
+
+    // Sous-titre avec les noms des boutiques
+    doc.setFontSize(12);
+    doc.setTextColor(...colors.secondary);
+    doc.text(`${shop1.profile.shopName} vs ${shop2.profile.shopName}`, 15, currentY);
+    currentY += 15;
+
+    // Tableau de comparaison
+    doc.autoTable({
+        startY: currentY,
+        head: [['Métrique', shop1.profile.shopName, shop2.profile.shopName, 'Différence']],
+        body: [
+            ['Abonnés', 
+                shop1.profile.followers.toString(),
+                shop2.profile.followers.toString(),
+                `${comparison.followers.difference} (${comparison.followers.percentage}%)`
+            ],
+            ['Note moyenne',
+                shop1.profile.rating.toFixed(1) + '/5',
+                shop2.profile.rating.toFixed(1) + '/5',
+                `${comparison.rating.difference} (${comparison.rating.percentage}%)`
+            ],
+            ['Articles vendus',
+                shop1.metrics.itemsSold.toString(),
+                shop2.metrics.itemsSold.toString(),
+                `${comparison.sales.difference} (${comparison.sales.percentage}%)`
+            ],
+            ['Prix moyen',
+                shop1.metrics.averagePrice.toFixed(2) + '€',
+                shop2.metrics.averagePrice.toFixed(2) + '€',
+                `${comparison.averagePrice.difference}€ (${comparison.averagePrice.percentage}%)`
+            ]
+        ],
+        headStyles: {
+            fillColor: colors.primary,
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+            fillColor: [250, 250, 250]
+        },
+        styles: {
+            fontSize: 11,
+            cellPadding: 5
+        }
+    });
+
+    currentY = doc.lastAutoTable.finalY + 20;
+
+    return currentY;
 }
 
 function generateProReport(doc, data, startY, colors) {
-    // ... Code existant pour le rapport pro ...
-    return startY;
-}
+    let currentY = startY;
+    
+    doc.setFontSize(18);
+    doc.setTextColor(...colors.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Analyse Professionnelle', 15, currentY);
+    currentY += 10;
 
-function getColorFromIndex(index, colors) {
-    const baseColors = [
-        colors.primary,
-        colors.accent,
-        [70, 150, 150],  // Turquoise foncé
-        [150, 70, 150],  // Violet
-        [150, 150, 70]   // Jaune foncé
-    ];
-    return baseColors[index % baseColors.length];
+    // Tableau des métriques pro
+    doc.autoTable({
+        startY: currentY,
+        head: [['Métrique', 'Valeur']],
+        body: [
+            ['Chiffre d\'affaires', `${data.financials?.totalRevenue?.toFixed(2)}€`],
+            ['Dépenses marketing', `${data.financials?.boostExpenses?.toFixed(2)}€`],
+            ['Solde actuel', `${data.financials?.currentBalance?.toFixed(2)}€`],
+            ['Revenu moyen par article', `${data.metrics?.revenuePerItem?.toFixed(2)}€`],
+            ['Vélocité des ventes', `${data.metrics?.salesVelocity?.toFixed(2)} ventes/semaine`]
+        ],
+        headStyles: {
+            fillColor: colors.primary,
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+            fillColor: [250, 250, 250]
+        },
+        styles: {
+            fontSize: 11,
+            cellPadding: 5
+        }
+    });
+    
+    currentY = doc.lastAutoTable.finalY + 15;
+    return currentY;
 }
