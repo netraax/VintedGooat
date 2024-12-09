@@ -1,4 +1,5 @@
 let charts = {};
+import Chart from 'chart.js/auto';
 import { createSalesEvolutionChart } from './charts/salesChart.js';
 
 export function initNavigation() {
@@ -91,8 +92,8 @@ export function displayResults(data, container) {
             <!-- Évolution des Ventes -->
             <div class="result-card">
                 <h3>📈 Évolution des Ventes</h3>
-                <div class="salesEvolutionChart">
-                    <canvas id="salesChart"></canvas>
+                <div class="chart-container">
+                    <canvas id="salesEvolutionChart"></canvas>
                 </div>
             </div>
 
@@ -120,11 +121,14 @@ export function displayResults(data, container) {
     container.classList.add('active');
 
     // Création des graphiques
-    function createCharts(data, isProAccount) {
+    setTimeout(() => createCharts(data, isProAccount), 0);
+}
+
+function createCharts(data, isProAccount) {
     // Graphique des ventes par pays
     createCountryChart(data);
     
-    // Nouveau graphique d'évolution des ventes
+    // Évolution des ventes
     const salesData = data.sales.recent.map((sale, index) => ({
         date: `Il y a ${sale.timeAgo} ${sale.unit}`,
         count: index + 1
@@ -169,44 +173,6 @@ function createCountryChart(data) {
                                 const percentage = ((context.raw / total) * 100).toFixed(1);
                                 return `${context.label}: ${context.raw} (${percentage}%)`;
                             }
-                        }
-                    }
-                }
-            }
-        });
-    }
-}
-
-function createSalesChart(data) {
-    const ctx = document.getElementById('salesChart');
-    if (ctx && data.sales.recent && data.sales.recent.length > 0) {
-        const salesData = prepareSalesData(data.sales.recent);
-        
-        charts.sales = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: salesData.labels,
-                datasets: [{
-                    label: 'Nombre de ventes',
-                    data: salesData.data,
-                    borderColor: '#09B1BA',
-                    backgroundColor: 'rgba(9, 177, 186, 0.1)',
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    intersect: false,
-                    mode: 'index'
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
                         }
                     }
                 }
