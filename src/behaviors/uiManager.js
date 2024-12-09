@@ -1,4 +1,5 @@
 let charts = {};
+import { createSalesEvolutionChart } from './charts/salesChart.js';
 
 export function initNavigation() {
     const navButtons = document.querySelectorAll('.nav-btn');
@@ -119,14 +120,17 @@ export function displayResults(data, container) {
     container.classList.add('active');
 
     // Création des graphiques
-    setTimeout(() => createCharts(data, isProAccount), 0);
-}
-
-function createCharts(data, isProAccount) {
+    function createCharts(data, isProAccount) {
     // Graphique des ventes par pays
     createCountryChart(data);
-    // Graphique de l'évolution des ventes
-    createSalesChart(data);
+    
+    // Nouveau graphique d'évolution des ventes
+    const salesData = data.sales.recent.map((sale, index) => ({
+        date: `Il y a ${sale.timeAgo} ${sale.unit}`,
+        count: index + 1
+    })).reverse();
+    createSalesEvolutionChart(salesData);
+    
     // Graphiques Pro supplémentaires
     if (isProAccount) {
         createBrandsChart(data);
