@@ -15,6 +15,7 @@
                 <div class="nav-buttons">
                     <button class="nav-btn active" data-page="main">Accueil</button>
                     <button class="nav-btn" data-page="analyse-pro">Analyse Pro</button>
+                    <button class="nav-btn" data-page="compare">Comparer</button>
                 </div>
             </div>
         </nav>
@@ -44,6 +45,7 @@
                     <div class="button-group">
                         <button id="analyze-button" class="btn btn-primary">Analyser</button>
                         <button id="reset-button" class="btn btn-secondary">Nouvelle analyse</button>
+                        <button class="btn btn-secondary export-pdf">Exporter en PDF</button>
                     </div>
                 </div>
                 <div id="analysis-results" class="results-container"></div>
@@ -60,9 +62,34 @@
                     <div class="button-group">
                         <button id="analyze-pro-button" class="btn btn-primary">Analyser</button>
                         <button id="reset-pro-button" class="btn btn-secondary">Nouvelle analyse</button>
+                        <button class="btn btn-secondary export-pdf">Exporter en PDF</button>
                     </div>
                 </div>
                 <div id="pro-results" class="results-container"></div>
+            </div>
+        </section>
+
+        <!-- Page Comparaison -->
+        <section id="compare" class="page hidden">
+            <div class="container">
+                <h1>Comparaison de Boutiques</h1>
+                <p class="description">Comparez les performances de deux boutiques Vinted</p>
+                <div class="comparison-grid">
+                    <div class="shop-input">
+                        <h3>Boutique 1</h3>
+                        <textarea id="shop1-input" placeholder="Collez le contenu de la première boutique..."></textarea>
+                    </div>
+                    <div class="shop-input">
+                        <h3>Boutique 2</h3>
+                        <textarea id="shop2-input" placeholder="Collez le contenu de la deuxième boutique..."></textarea>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button id="compare-button" class="btn btn-primary">Comparer</button>
+                    <button id="reset-compare-button" class="btn btn-secondary">Réinitialiser</button>
+                    <button class="btn btn-secondary export-pdf">Exporter en PDF</button>
+                </div>
+                <div id="comparison-results" class="results-container"></div>
             </div>
         </section>
     </main>
