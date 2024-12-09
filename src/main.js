@@ -223,20 +223,80 @@ function initPDFExport() {
 }
 
 // Fonctions utilitaires pour récupérer les données d'analyse depuis l'UI
+// Fonctions utilitaires pour récupérer les données d'analyse depuis l'UI
 function getAnalysisDataFromUI(container) {
-    // Implémentation de la récupération des données d'analyse standard
-    // Cette fonction doit être adaptée à votre structure HTML
-    return {};
+    try {
+        // Récupération des informations du profil
+        const shopName = container.querySelector('p:contains("Boutique:")').textContent.match(/Boutique:\s*(.+)/)[1];
+        const rating = parseFloat(container.querySelector('p:contains("Note:")').textContent.match(/Note:\s*(\d+\.?\d*)/)[1]);
+        const followers = parseInt(container.querySelector('p:contains("Abonnés:")').textContent.match(/Abonnés:\s*(\d+)/)[1]);
+        const totalRatings = parseInt(container.querySelector('p:contains("Total des ventes:")').textContent.match(/Total des ventes:\s*(\d+)/)[1]);
+
+        // Récupération des statistiques
+        const totalItems = parseInt(container.querySelector('p:contains("Articles en vente:")').textContent.match(/Articles en vente:\s*(\d+)/)[1]);
+        const averagePrice = parseFloat(container.querySelector('p:contains("Prix moyen:")').textContent.match(/Prix moyen:\s*(\d+\.?\d*)/)[1]);
+        const itemsSold = parseInt(container.querySelector('p:contains("Articles vendus:")').textContent.match(/Articles vendus:\s*(\d+)/)[1]);
+        const conversionRate = parseFloat(container.querySelector('p:contains("Taux de conversion:")').textContent.match(/Taux de conversion:\s*(\d+\.?\d*)/)[1]);
+
+        return {
+            profile: {
+                shopName,
+                rating,
+                followers,
+                totalRatings
+            },
+            metrics: {
+                totalItems,
+                averagePrice,
+                itemsSold,
+                conversionRate
+            }
+        };
+    } catch (error) {
+        console.error('Erreur lors de la récupération des données:', error);
+        showNotification('Erreur lors de la récupération des données', 'error');
+        throw error;
+    }
 }
 
 function getComparisonDataFromUI(container) {
-    // Implémentation de la récupération des données de comparaison
-    // Cette fonction doit être adaptée à votre structure HTML
-    return {};
+    try {
+        const shop1 = document.getElementById('shop1-input').value;
+        const shop2 = document.getElementById('shop2-input').value;
+
+        if (!shop1 || !shop2) {
+            throw new Error('Les données des deux boutiques sont requises');
+        }
+
+        return compareShops(shop1, shop2);
+    } catch (error) {
+        console.error('Erreur lors de la récupération des données de comparaison:', error);
+        showNotification('Erreur lors de la récupération des données de comparaison', 'error');
+        throw error;
+    }
 }
 
 function getProAnalysisDataFromUI(container) {
-    // Implémentation de la récupération des données d'analyse pro
-    // Cette fonction doit être adaptée à votre structure HTML
-    return {};
+    try {
+        // Récupération des données financières
+        const revenueText = container.querySelector('p:contains("Chiffre d\'affaires:")').textContent;
+        const expensesText = container.querySelector('p:contains("Dépenses totales:")').textContent;
+        const balanceText = container.querySelector('p:contains("Solde actuel:")').textContent;
+
+        const totalRevenue = parseFloat(revenueText.match(/Chiffre d'affaires:\s*(\d+\.?\d*)/)[1]);
+        const totalExpenses = parseFloat(expensesText.match(/Dépenses totales:\s*(\d+\.?\d*)/)[1]);
+        const currentBalance = parseFloat(balanceText.match(/Solde actuel:\s*(\d+\.?\d*)/)[1]);
+
+        return {
+            financials: {
+                totalRevenue,
+                totalExpenses,
+                currentBalance
+            }
+        };
+    } catch (error) {
+        console.error('Erreur lors de la récupération des données pro:', error);
+        showNotification('Erreur lors de la récupération des données pro', 'error');
+        throw error;
+    }
 }
