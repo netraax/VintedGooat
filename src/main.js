@@ -198,7 +198,6 @@ function initPDFExport() {
                     return;
                 }
 
-                // Récupérer directement les données de l'analyse précédente
                 let exportData;
 
                 if (section.id === 'main') {
@@ -209,11 +208,37 @@ function initPDFExport() {
                     }
                 } else if (section.id === 'compare') {
                     // Pour la comparaison
-                    const shop1Text = document.getElementById('shop1-input').value;
-                    const shop2Text = document.getElementById('shop2-input').value;
-                    if (shop1Text && shop2Text) {
-                        exportData = compareShops(shop1Text, shop2Text);
+                    const table = resultsContainer.querySelector('.comparison-table');
+                    if (!table) {
+                        throw new Error('Données de comparaison introuvables');
                     }
+
+                    const headerCells = table.querySelectorAll('thead th');
+                    const shop1Name = headerCells[1].textContent;
+                    const shop2Name = headerCells[2].textContent;
+
+                    const shop1 = { profile: { shopName: shop1Name }, metrics: {} };
+                    const shop2 = { profile: { shopName: shop2Name }, metrics: {} };
+                    const comparison = {};
+
+                    table.querySelectorAll('tbody tr').forEach(row => {
+                        const cells = row.querySelectorAll('td');
+                        const metric = cells[0].textContent.toLowerCase().replace(/ /g, '_');
+                        const value1 = parseFloat(cells[1].textContent.replace(/[€%]/g, ''));
+                        const value2 = parseFloat(cells[2].textContent.replace(/[€%]/g, ''));
+                        const diffText = cells[3].textContent;
+                        
+                        shop1.metrics[metric] = value1;
+                        shop2.metrics[metric] = value2;
+                        
+                        const [diff, percent] = diffText.split('(');
+                        comparison[metric] = {
+                            difference: parseFloat(diff.replace(/[€%]/g, '')),
+                            percentage: parseFloat(percent.replace(/[%)]/g, ''))
+                        };
+                    });
+
+                    exportData = { shop1, shop2, comparison };
                 }
 
                 if (!exportData) {
