@@ -92,43 +92,6 @@ export function exportToPDF(data, type = 'single') {
 function generateSingleShopReport(doc, data, startY, colors) {
     let currentY = startY;
     
-    // Section Informations Boutique
-    doc.setFontSize(18);
-    doc.setTextColor(...colors.primary);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Informations de la Boutique', 15, currentY);
-    currentY += 10;
-    
-    // Tableau des informations de base
-    doc.autoTable({
-        startY: currentY,
-        head: [['Métrique', 'Valeur']],
-        body: [
-            ['Nom de la boutique', data.profile.shopName],
-            ['Note moyenne', `${data.profile.rating.toFixed(1)}/5`],
-            ['Abonnés', data.profile.followers.toString()],
-            ['Évaluations totales', data.profile.totalRatings.toString()],
-            ['Articles en vente', data.metrics.totalItems.toString()],
-            ['Articles vendus', data.metrics.itemsSold.toString()],
-            ['Taux de conversion', `${data.metrics.conversionRate.toFixed(2)}%`],
-            ['Prix moyen', `${data.metrics.averagePrice.toFixed(2)}€`]
-        ],
-        headStyles: {
-            fillColor: colors.primary,
-            textColor: [255, 255, 255],
-            fontStyle: 'bold'
-        },
-        alternateRowStyles: {
-            fillColor: [250, 250, 250]
-        },
-        styles: {
-            fontSize: 11,
-            cellPadding: 5
-        }
-    });
-    
-    currentY = doc.lastAutoTable.finalY + 20;
-
     // Section Top Marques
     if (data.metrics.topBrands) {
         doc.setFontSize(18);
