@@ -5,8 +5,14 @@ import { updateAnalytics } from './analytics.js';
 
 export function compareShops(shop1Text, shop2Text) {
     try {
+        // Ajout des logs de débogage
+        console.log('Analyzing shop1:', shop1Text);
         const analysis1 = analyzeProfile(shop1Text);
+        console.log('Shop1 analysis result:', analysis1);
+
+        console.log('Analyzing shop2:', shop2Text);
         const analysis2 = analyzeProfile(shop2Text);
+        console.log('Shop2 analysis result:', analysis2);
 
         const comparisonData = {
             shop1: analysis1,
@@ -17,7 +23,7 @@ export function compareShops(shop1Text, shop2Text) {
         updateAnalytics('shops_comparison', comparisonData);
         return comparisonData;
     } catch (error) {
-        console.error('Erreur lors de la comparaison:', error);
+        console.error('Detailed error:', error);
         showNotification('Erreur lors de la comparaison des boutiques', 'error');
         throw error;
     }
