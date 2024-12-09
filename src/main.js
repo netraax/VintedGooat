@@ -134,55 +134,55 @@ function initCompareFeature() {
 }
 
 function displayComparisonResults(data, container) {
-    if (!container || !data) return;
+   if (!container || !data) return;
 
-    const { shop1, shop2, comparison } = data;
+   const { shop1, shop2, comparison } = data;
 
-    container.innerHTML = `
-        <div class="results-grid">
-            <div class="result-card">
-                <h3>📊 Comparaison Générale</h3>
-                <table class="comparison-table">
-                    <thead>
-                        <tr>
-                            <th>Métrique</th>
-                            <th>${shop1.profile.shopName}</th>
-                            <th>${shop2.profile.shopName}</th>
-                            <th>Différence</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Abonnés</td>
-                            <td>${shop1.profile.followers}</td>
-                            <td>${shop2.profile.followers}</td>
-                            <td>${comparison.followers.difference} (${comparison.followers.percentage}%)</td>
-                        </tr>
-                        <tr>
-                            <td>Note moyenne</td>
-                            <td>${shop1.profile.rating.toFixed(1)}/5</td>
-                            <td>${shop2.profile.rating.toFixed(1)}/5</td>
-                            <td>${comparison.rating.difference} (${comparison.rating.percentage}%)</td>
-                        </tr>
-                        <tr>
-                            <td>Articles vendus</td>
-                            <td>${shop1.metrics.itemsSold}</td>
-                            <td>${shop2.metrics.itemsSold}</td>
-                            <td>${comparison.sales.difference} (${comparison.sales.percentage}%)</td>
-                        </tr>
-                        <tr>
-                            <td>Prix moyen</td>
-                            <td>${shop1.metrics.averagePrice.toFixed(2)}€</td>
-                            <td>${shop2.metrics.averagePrice.toFixed(2)}€</td>
-                            <td>${comparison.averagePrice.difference}€ (${comparison.averagePrice.percentage}%)</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    `;
+   container.innerHTML = `
+       <div class="results-grid">
+           <div class="result-card">
+               <h3>📊 Comparaison Générale</h3>
+               <table class="comparison-table">
+                   <thead>
+                       <tr>
+                           <th>Métrique</th>
+                           <th>${shop1.profile.shopName}</th>
+                           <th>${shop2.profile.shopName}</th>
+                           <th>Différence</th>
+                       </tr>
+                   </thead>
+                   <tbody>
+                       <tr>
+                           <td>Abonnés</td>
+                           <td>${shop1.profile.followers}</td>
+                           <td>${shop2.profile.followers}</td>
+                           <td>${comparison?.followers?.difference || 0} (${comparison?.followers?.percentage || 0}%)</td>
+                       </tr>
+                       <tr>
+                           <td>Note moyenne</td>
+                           <td>${shop1.profile.rating?.toFixed(1) || 0}/5</td>
+                           <td>${shop2.profile.rating?.toFixed(1) || 0}/5</td>
+                           <td>${comparison?.rating?.difference || 0} (${comparison?.rating?.percentage || 0}%)</td>
+                       </tr>
+                       <tr>
+                           <td>Articles vendus</td>
+                           <td>${shop1.metrics.itemsSold || 0}</td>
+                           <td>${shop2.metrics.itemsSold || 0}</td>
+                           <td>${comparison?.sales?.difference || 0} (${comparison?.sales?.percentage || 0}%)</td>
+                       </tr>
+                       <tr>
+                           <td>Prix moyen</td>
+                           <td>${(shop1.metrics.averagePrice || 0).toFixed(2)}€</td>
+                           <td>${(shop2.metrics.averagePrice || 0).toFixed(2)}€</td>
+                           <td>${comparison?.averagePrice?.difference || 0}€ (${comparison?.averagePrice?.percentage || 0}%)</td>
+                       </tr>
+                   </tbody>
+               </table>
+           </div>
+       </div>
+   `;
 
-    container.classList.add('active');
+   container.classList.add('active');
 }
 
 function initPDFExport() {
