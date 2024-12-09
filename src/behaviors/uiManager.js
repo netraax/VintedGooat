@@ -44,7 +44,7 @@ export function displayResults(data, container) {
     container.innerHTML = `
         <div class="results-grid">
             <!-- Informations du Profil -->
-            <div class="result-card">
+            <div class="result-card" data-section="profile-info">
                 <h3>📊 Informations du Profil</h3>
                 <p>Boutique: <strong>${data.profile.shopName}</strong></p>
                 <p>Note: <strong>${data.profile.rating.toFixed(1)}/5</strong></p>
@@ -60,7 +60,7 @@ export function displayResults(data, container) {
             </div>
             
             <!-- Statistiques Articles -->
-            <div class="result-card">
+            <div class="result-card" data-section="stats-info">
                 <h3>📈 Statistiques Articles</h3>
                 <p>Articles en vente: <strong>${data.metrics.totalItems}</strong></p>
                 <p>Prix moyen: <strong>${data.metrics.averagePrice.toFixed(2)}€</strong></p>
@@ -70,7 +70,7 @@ export function displayResults(data, container) {
 
             <!-- Performance Marketing (Pro) -->
             ${isProAccount ? `
-                <div class="result-card">
+                <div class="result-card" data-section="performance-info">
                     <h3>🎯 Performance Marketing</h3>
                     <p>Vues totales: <strong>${data.metrics.totalViews}</strong></p>
                     <p>Favoris: <strong>${data.metrics.totalFavorites}</strong></p>
