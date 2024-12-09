@@ -188,35 +188,52 @@ function displayComparisonResults(data, container) {
 function initPDFExport() {
     document.querySelectorAll('.export-pdf').forEach(button => {
         button.addEventListener('click', () => {
-            const section = button.closest('section');
-            const resultsContainer = section.querySelector('.results-container');
-
-            if (!resultsContainer || !resultsContainer.classList.contains('active')) {
-                showNotification('Veuillez d\'abord effectuer une analyse', 'warning');
-                return;
-            }
-
             try {
-                const pageId = section.id;
-                let data;
-                let type;
-
-                switch (pageId) {
-                    case 'main':
-                        data = getDataFromResultCard(resultsContainer);
-                        type = 'single';
-                        break;
-                    case 'compare':
-                        data = getComparisonData(resultsContainer);
-                        type = 'comparison';
-                        break;
-                    case 'analyse-pro':
-                        data = getProData(resultsContainer);
-                        type = 'pro';
-                        break;
+                const section = button.closest('section');
+                if (!section) {
+                    throw new Error('Section non trouvée');
                 }
 
-                exportToPDF(data, type);
+                const resultsContainer = section.querySelector('.results-container');
+                if (!resultsContainer || !resultsContainer.classList.contains('active')) {
+                    showNotification('Veuillez d\'abord effectuer une analyse', 'warning');
+                    return;
+                }
+
+                let exportData;
+                const pageId = section.id;
+
+                // Récupération des données en fonction du type de page
+                if (pageId === 'main') {
+                    // Extraire les données depuis les éléments HTML
+                    const profileCard = resultsContainer.querySelector('[data-section="profile-info"]');
+                    const statsCard = resultsContainer.querySelector('[data-section="stats-info"]');
+                    
+                    if (!profileCard || !statsCard) {
+                        throw new Error('Données d\'analyse introuvables');
+                    }
+
+                    exportData = {
+                        profile: {
+                            shopName: extractValue(profileCard, 'Boutique'),
+                            rating: parseFloat(extractValue(profileCard, 'Note')),
+                            followers: parseInt(extractValue(profileCard, 'Abonnés')),
+                            totalRatings: parseInt(extractValue(profileCard, 'Total des ventes'))
+                        },
+                        metrics: {
+                            totalItems: parseInt(extractValue(statsCard, 'Articles en vente')),
+                            itemsSold: parseInt(extractValue(statsCard, 'Articles vendus')),
+                            averagePrice: parseFloat(extractValue(statsCard, 'Prix moyen')),
+                            conversionRate: parseFloat(extractValue(statsCard, 'Taux de conversion'))
+                        }
+                    };
+                } else if (pageId === 'compare') {
+                    // Pour la comparaison, on utilise directement les données affichées dans le tableau
+                    exportData = extractComparisonData(resultsContainer);
+                }
+
+                // Export du PDF avec les données extraites
+                exportToPDF(exportData, pageId === 'compare' ? 'comparison' : 'single');
                 showNotification('Export PDF généré avec succès', 'success');
             } catch (error) {
                 console.error('Erreur lors de l\'export PDF:', error);
@@ -226,74 +243,37 @@ function initPDFExport() {
     });
 }
 
-function getDataFromResultCard(container) {
-    const data = {
-        profile: {},
-        metrics: {},
-        sales: {},
-        financials: {}
-    };
-
-    try {
-        container.querySelectorAll('.result-card').forEach(card => {
-            const cardTitle = card.querySelector('h3').textContent;
-            card.querySelectorAll('p').forEach(p => {
-                const [label, value] = p.textContent.split(':').map(str => str.trim());
-                const cleanValue = value.replace(/[^0-9.,]/g, '');
-                
-                if (cardTitle.includes('Profil')) {
-                    data.profile[label] = isNaN(cleanValue) ? value : parseFloat(cleanValue);
-                } else if (cardTitle.includes('Articles')) {
-                    data.metrics[label] = isNaN(cleanValue) ? value : parseFloat(cleanValue);
-                } else if (cardTitle.includes('Performance')) {
-                    data.sales[label] = isNaN(cleanValue) ? value : parseFloat(cleanValue);
-                } else if (cardTitle.includes('Financier')) {
-                    data.financials[label] = isNaN(cleanValue) ? value : parseFloat(cleanValue);
-                }
-            });
-        });
-
-        return data;
-    } catch (error) {
-        throw new Error('Impossible d\'extraire les données d\'analyse');
-    }
+// Fonction utilitaire pour extraire les valeurs
+function extractValue(element, label) {
+    const strongElement = element.querySelector(`p:contains("${label}:") strong`);
+    if (!strongElement) return '';
+    const value = strongElement.textContent.trim();
+    return value.replace(/[€%]/g, ''); // Enlève les symboles € et %
 }
 
-function getComparisonData(container) {
-    try {
-        const table = container.querySelector('.comparison-table');
-        if (!table) throw new Error('Tableau de comparaison introuvable');
+// Fonction pour extraire les données de comparaison
+function extractComparisonData(container) {
+    const table = container.querySelector('.comparison-table');
+    if (!table) throw new Error('Tableau de comparaison introuvable');
 
-        const data = {
-            shops: [],
-            metrics: []
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    const [shop1Name, shop2Name] = Array.from(table.querySelectorAll('thead th')).slice(1, 3).map(th => th.textContent);
+
+    const shop1 = { profile: { shopName: shop1Name }, metrics: {} };
+    const shop2 = { profile: { shopName: shop2Name }, metrics: {} };
+    const comparison = {};
+
+    // Extraction des données ligne par ligne
+    rows.forEach(row => {
+        const cells = Array.from(row.querySelectorAll('td'));
+        const metric = cells[0].textContent.toLowerCase().replace(/ /g, '_');
+        shop1.metrics[metric] = parseFloat(cells[1].textContent);
+        shop2.metrics[metric] = parseFloat(cells[2].textContent);
+        comparison[metric] = {
+            difference: parseFloat(cells[3].textContent.split('(')[0]),
+            percentage: parseFloat(cells[3].textContent.match(/\((.*?)%\)/)[1])
         };
+    });
 
-        // Extraction des noms des boutiques
-        const headers = table.querySelectorAll('th');
-        data.shops = [headers[1].textContent, headers[2].textContent];
-
-        // Extraction des métriques
-        table.querySelectorAll('tbody tr').forEach(row => {
-            const cells = row.querySelectorAll('td');
-            data.metrics.push({
-                name: cells[0].textContent,
-                shop1: cells[1].textContent,
-                shop2: cells[2].textContent,
-                difference: cells[3].textContent
-            });
-        });
-
-        return data;
-    } catch (error) {
-        throw new Error('Impossible d\'extraire les données de comparaison');
-    }
-}
-
-function getProData(container) {
-    try {
-        return getDataFromResultCard(container);
-    } catch (error) {
-        throw new Error('Impossible d\'extraire les données pro');
-    }
+    return { shop1, shop2, comparison };
 }
