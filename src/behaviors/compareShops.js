@@ -18,13 +18,30 @@ export function compareShops(shop1Text, shop2Text) {
 
         // Mise à jour des analytics
         updateAnalytics('shops_comparison', comparisonData);
-
         return comparisonData;
     } catch (error) {
         console.error('Erreur lors de la comparaison:', error);
         showNotification('Erreur lors de la comparaison des boutiques', 'error');
         throw error;
     }
+}
+
+function generateComparisonMetrics(shop1, shop2) {
+    return {
+        followers: compareMetric(shop1.profile.followers, shop2.profile.followers),
+        rating: compareMetric(shop1.profile.rating, shop2.profile.rating),
+        sales: compareMetric(shop1.metrics.itemsSold, shop2.metrics.itemsSold),
+        averagePrice: compareMetric(shop1.metrics.averagePrice, shop2.metrics.averagePrice)
+    };
+}
+
+function compareMetric(val1, val2) {
+    const difference = val1 - val2;
+    const percentage = val2 !== 0 ? (difference / val2) * 100 : 0;
+    return {
+        difference: Number(difference.toFixed(2)),
+        percentage: Number(percentage.toFixed(2))
+    };
 }
 
 function generateComparisonMetrics(shop1, shop2) {
