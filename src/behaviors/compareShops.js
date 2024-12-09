@@ -5,18 +5,15 @@ import { updateAnalytics } from './analytics.js';
 
 export function compareShops(shop1Text, shop2Text) {
     try {
-        // Analyse des deux boutiques
         const analysis1 = analyzeProfile(shop1Text);
         const analysis2 = analyzeProfile(shop2Text);
 
-        // Création de l'objet de comparaison
         const comparisonData = {
             shop1: analysis1,
             shop2: analysis2,
             comparison: generateComparisonMetrics(analysis1, analysis2)
         };
 
-        // Mise à jour des analytics
         updateAnalytics('shops_comparison', comparisonData);
         return comparisonData;
     } catch (error) {
@@ -24,24 +21,6 @@ export function compareShops(shop1Text, shop2Text) {
         showNotification('Erreur lors de la comparaison des boutiques', 'error');
         throw error;
     }
-}
-
-function generateComparisonMetrics(shop1, shop2) {
-    return {
-        followers: compareMetric(shop1.profile.followers, shop2.profile.followers),
-        rating: compareMetric(shop1.profile.rating, shop2.profile.rating),
-        sales: compareMetric(shop1.metrics.itemsSold, shop2.metrics.itemsSold),
-        averagePrice: compareMetric(shop1.metrics.averagePrice, shop2.metrics.averagePrice)
-    };
-}
-
-function compareMetric(val1, val2) {
-    const difference = val1 - val2;
-    const percentage = val2 !== 0 ? (difference / val2) * 100 : 0;
-    return {
-        difference: Number(difference.toFixed(2)),
-        percentage: Number(percentage.toFixed(2))
-    };
 }
 
 function generateComparisonMetrics(shop1, shop2) {
@@ -92,7 +71,6 @@ function analyzeBrandOverlap(brands1 = {}, brands2 = {}) {
     const uniqueBrands1 = new Set();
     const uniqueBrands2 = new Set();
 
-    // Analyse des marques communes et uniques
     Object.keys(brands1).forEach(brand => {
         if (brand in brands2) {
             commonBrands.add(brand);
