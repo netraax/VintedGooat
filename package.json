@@ -14,7 +14,12 @@
     "jspdf-autotable": "^3.8.1",
     "react-chartjs-2": "^5.2.0",
     "@cubejs-client/core": "^0.31.0",
-    "recharts": "^2.10.3"
+    "recharts": "^2.10.3",
+    "chartjs-plugin-datalabels": "^2.2.0",
+    "@chartjs/adapter-date-fns": "^3.0.0",
+    "date-fns": "^2.30.0",
+    "@chartjs/plugin-zoom": "^2.0.1",
+    "chartjs-plugin-gradient": "^0.6.1"
   },
   "devDependencies": {
     "vite": "^5.0.0"
