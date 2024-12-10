@@ -1,3 +1,4 @@
+import { calculateBasicMetrics } from './metrics/basicMetrics.js';
 export function analyzeProfile(text) {
     return {
         profile: extractProfileInfo(text),
