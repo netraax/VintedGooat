@@ -116,11 +116,7 @@ export function displayResults(data, container) {
                 </div>
             ` : ''}
             
-            container.innerHTML = `
-    <div class="results-grid">
-        <!-- Vos cartes existantes -->
-        
-        <!-- Nouvelle section pour les métriques avancées -->
+            <!-- Nouvelle section pour les métriques avancées -->
         <div class="result-card">
             <h3>📊 Métriques Avancées</h3>
             <div class="metrics-tabs">
