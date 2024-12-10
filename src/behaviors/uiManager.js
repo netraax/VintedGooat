@@ -115,75 +115,8 @@ export function displayResults(data, container) {
                     </div>
                 </div>
             ` : ''}
-            
-            <!-- Nouvelle section pour les métriques avancées -->
-        <div class="result-card">
-            <h3>📊 Métriques Avancées</h3>
-            <div class="metrics-tabs">
-                <button class="tab-btn active" data-tab="basic">Basiques</button>
-                <button class="tab-btn" data-tab="sales">Ventes</button>
-                <button class="tab-btn" data-tab="engagement">Engagement</button>
             </div>
-            
-            <!-- Onglet Métriques Basiques -->
-            <div class="tab-content active" id="basic-metrics">
-                <div class="metric-group">
-                    <h4>Revenus Estimés</h4>
-                    <p>Total: <strong>${data.advancedMetrics.basic.estimatedRevenue.total.toFixed(2)}€</strong></p>
-                    <p>Dernier mois: <strong>${data.advancedMetrics.basic.estimatedRevenue.lastMonth.toFixed(2)}€</strong></p>
-                </div>
-                
-                <div class="metric-group">
-                    <h4>Fréquence des Ventes</h4>
-                    <p>Par jour: <strong>${data.advancedMetrics.basic.salesFrequency.daily.toFixed(1)}</strong></p>
-                    <p>Par semaine: <strong>${data.advancedMetrics.basic.salesFrequency.weekly.toFixed(1)}</strong></p>
-                </div>
-            </div>
-            
-            <!-- Onglet Ventes -->
-            <div class="tab-content" id="sales-metrics">
-                <div class="metric-group">
-                    <h4>Croissance des Ventes</h4>
-                    <p>30 jours: <strong>${data.advancedMetrics.sales.salesGrowth['30days'].growth.toFixed(1)}%</strong></p>
-                    <p>90 jours: <strong>${data.advancedMetrics.sales.salesGrowth['90days'].growth.toFixed(1)}%</strong></p>
-                </div>
-                
-                <div class="metric-group">
-                    <h4>Meilleures Ventes</h4>
-                    <p>Article le plus vendu: <strong>${data.advancedMetrics.sales.bestSelling.items.byQuantity[0]?.name || 'N/A'}</strong></p>
-                </div>
-            </div>
-            
-            <!-- Onglet Engagement -->
-            <div class="tab-content" id="engagement-metrics">
-                <div class="metric-group">
-                    <h4>Engagement des Followers</h4>
-                    <p>Taux de conversion: <strong>${data.advancedMetrics.engagement.followerMetrics.conversionRate.percentage.toFixed(1)}%</strong></p>
-                    <p>Revenu par follower: <strong>${data.advancedMetrics.engagement.followerMetrics.revenuePerFollower.amount.toFixed(2)}€</strong></p>
-                </div>
-            </div>
-        </div>
-    </div>
-`;
-
-// Ajout de la gestion des onglets
-const tabButtons = container.querySelectorAll('.tab-btn');
-const tabContents = container.querySelectorAll('.tab-content');
-
-tabButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        // Retirer la classe active de tous les boutons et contenus
-        tabButtons.forEach(btn => btn.classList.remove('active'));
-        tabContents.forEach(content => content.classList.remove('active'));
-        
-        // Ajouter la classe active au bouton cliqué et au contenu correspondant
-        button.classList.add('active');
-        const tabId = `${button.dataset.tab}-metrics`;
-        container.querySelector(`#${tabId}`).classList.add('active');
-    });
-});
-        </div>
-    `;
+        `;
 
     container.classList.add('active');
 
@@ -279,6 +212,46 @@ function createBrandsChart(data) {
                         ticks: {
                             stepSize: 1
                         }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// Bloc ajouté pour nouveaux graphiques
+function createAdvancedMetricsChart(data) {
+    const ctx = document.getElementById('advancedMetricsChart');
+    if (ctx) {
+        charts.advancedMetrics = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.advancedMetrics.dates,
+                datasets: [{
+                    label: 'Métriques avancées',
+                    data: data.advancedMetrics.values,
+                    backgroundColor: 'rgba(75,192,192,0.4)',
+                    borderColor: 'rgba(75,192,192,1)',
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'day'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true
                     }
                 }
             }
