@@ -1,11 +1,25 @@
+// Dans profileParser.js
 import { calculateBasicMetrics } from './metrics/basicMetrics.js';
+import { calculateSalesMetrics } from './metrics/salesMetrics.js';
+import { calculateEngagementMetrics } from './metrics/engagementMetrics.js';
+
 export function analyzeProfile(text) {
-    return {
+    const baseData = {
         profile: extractProfileInfo(text),
         sales: extractSalesInfo(text),
         items: extractItems(text),
         financials: extractFinancials(text),
         metrics: calculateMetrics(text)
+    };
+
+    // Ajout des nouvelles métriques
+    return {
+        ...baseData,
+        advancedMetrics: {
+            basic: calculateBasicMetrics(baseData),
+            sales: calculateSalesMetrics(baseData),
+            engagement: calculateEngagementMetrics(baseData)
+        }
     };
 }
 
