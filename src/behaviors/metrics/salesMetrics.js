@@ -1,24 +1,33 @@
 // src/behaviors/metrics/salesMetrics.js
-import { extractSalesInfo, extractFinancials } from '../transactionParser.js';
+import { PatternDetectionSystem } from '../patternDetection.js';
+import { CONFIG } from '../config.js';
 
-export function calculateSalesMetrics(data) {
+export async function calculateSalesMetrics(data) {
     try {
         if (!data) return {};
 
-        const {
-            transactions = [],
-            profile = {},
-            items = []
-        } = data;
-
+        const detector = new PatternDetectionSystem(data);
+        const analysis = await detector.analyze();
+        
         return {
-            salesGrowth: calculateSalesGrowth(transactions),
-            bestSelling: {
-                items: findBestSellingItems(transactions),
-                brands: findBestSellingBrands(transactions)
+            salesGrowth: analysis.patterns.sales.growth || {
+                '30days': { current: 0, previous: 0, growth: 0 },
+                '90days': { current: 0, previous: 0, growth: 0 }
             },
-            distribution: getSalesDistribution(transactions),
-            performance: calculateSalesPerformance(transactions, items)
+            bestSelling: {
+                items: analysis.patterns.sales.bestSelling?.items || [],
+                brands: analysis.patterns.sales.bestSelling?.brands || {}
+            },
+            distribution: analysis.patterns.sales.distribution || {
+                daily: {},
+                monthly: {},
+                yearly: {}
+            },
+            performance: analysis.patterns.sales.performance || {
+                conversionRate: 0,
+                averageDaysToSell: 0,
+                performanceScore: 0
+            }
         };
     } catch (error) {
         console.error('Erreur dans calculateSalesMetrics:', error);
