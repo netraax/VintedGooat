@@ -1,4 +1,3 @@
-// src/behaviors/charts/salesChart.js
 import Chart from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { CONFIG, CHART_CONFIG } from '../config.js';
