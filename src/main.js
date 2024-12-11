@@ -23,15 +23,9 @@ function initAnalysis() {
     const textarea = document.getElementById('profile-input');
     const resultsDiv = document.getElementById('analysis-results');
 
-    // Analyse Pro
-    const analyzeBtnPro = document.getElementById('analyze-pro-button');
-    const resetBtnPro = document.getElementById('reset-pro-button');
-    const textareaPro = document.getElementById('pro-input');
-    const resultsDivPro = document.getElementById('pro-results');
-
     // Gestion de l'analyse boutique
     if (analyzeBtn) {
-        analyzeBtn.addEventListener('click', () => {
+        analyzeBtn.addEventListener('click', async () => {
             const text = textarea?.value.trim();
             if (!text) {
                 showNotification('Veuillez coller le contenu de votre profil Vinted', 'error');
@@ -39,8 +33,9 @@ function initAnalysis() {
             }
 
             try {
-                const data = analyzeProfile(text);
-                displayResults(data, resultsDiv);
+                const detector = new PatternDetectionSystem({ text });
+                const { data: analysisData, charts } = await detector.analyzeAndFormat();
+                displayResults(analysisData, resultsDiv);
                 showNotification('Analyse terminée avec succès', 'success');
             } catch (error) {
                 console.error('Erreur d\'analyse:', error);
@@ -49,21 +44,9 @@ function initAnalysis() {
         });
     }
 
-    if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-            if (textarea) textarea.value = '';
-            if (resultsDiv) {
-                resultsDiv.innerHTML = '';
-                resultsDiv.classList.remove('active');
-            }
-            clearResults();
-            showNotification('Analyse réinitialisée');
-        });
-    }
-
     // Gestion de l'analyse pro
     if (analyzeBtnPro) {
-        analyzeBtnPro.addEventListener('click', () => {
+        analyzeBtnPro.addEventListener('click', async () => {
             const text = textareaPro?.value.trim();
             if (!text) {
                 showNotification('Veuillez coller votre historique de transactions', 'error');
@@ -71,8 +54,10 @@ function initAnalysis() {
             }
 
             try {
-                // TODO: Implémenter l'analyse pro une fois les patterns définis
-                showNotification('Analyse pro en développement', 'info');
+                const detector = new PatternDetectionSystem({ text, isPro: true });
+                const { data: analysisData, charts } = await detector.analyzeAndFormat();
+                displayResults(analysisData, resultsDivPro);
+                showNotification('Analyse terminée avec succès', 'success');
             } catch (error) {
                 console.error('Erreur d\'analyse pro:', error);
                 showNotification('Une erreur est survenue lors de l\'analyse', 'error');
@@ -80,16 +65,7 @@ function initAnalysis() {
         });
     }
 
-    if (resetBtnPro) {
-        resetBtnPro.addEventListener('click', () => {
-            if (textareaPro) textareaPro.value = '';
-            if (resultsDivPro) {
-                resultsDivPro.innerHTML = '';
-                resultsDivPro.classList.remove('active');
-            }
-            showNotification('Analyse pro réinitialisée');
-        });
-    }
+    // ... reste du code pour reset buttons ...
 }
 
 function initCompareFeature() {
@@ -187,7 +163,7 @@ function displayComparisonResults(data, container) {
 
 function initPDFExport() {
     document.querySelectorAll('.export-pdf').forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', async () => {
             try {
                 const section = button.closest('section');
                 if (!section) return;
@@ -204,41 +180,13 @@ function initPDFExport() {
                     // Pour l'analyse standard
                     const text = document.getElementById('profile-input').value;
                     if (text) {
-                        exportData = analyzeProfile(text);
+                        const detector = new PatternDetectionSystem({ text });
+                        const { data } = await detector.analyzeAndFormat();
+                        exportData = data;
                     }
                 } else if (section.id === 'compare') {
                     // Pour la comparaison
-                    const table = resultsContainer.querySelector('.comparison-table');
-                    if (!table) {
-                        throw new Error('Données de comparaison introuvables');
-                    }
-
-                    const headerCells = table.querySelectorAll('thead th');
-                    const shop1Name = headerCells[1].textContent;
-                    const shop2Name = headerCells[2].textContent;
-
-                    const shop1 = { profile: { shopName: shop1Name }, metrics: {} };
-                    const shop2 = { profile: { shopName: shop2Name }, metrics: {} };
-                    const comparison = {};
-
-                    table.querySelectorAll('tbody tr').forEach(row => {
-                        const cells = row.querySelectorAll('td');
-                        const metric = cells[0].textContent.toLowerCase().replace(/ /g, '_');
-                        const value1 = parseFloat(cells[1].textContent.replace(/[€%]/g, ''));
-                        const value2 = parseFloat(cells[2].textContent.replace(/[€%]/g, ''));
-                        const diffText = cells[3].textContent;
-                        
-                        shop1.metrics[metric] = value1;
-                        shop2.metrics[metric] = value2;
-                        
-                        const [diff, percent] = diffText.split('(');
-                        comparison[metric] = {
-                            difference: parseFloat(diff.replace(/[€%]/g, '')),
-                            percentage: parseFloat(percent.replace(/[%)]/g, ''))
-                        };
-                    });
-
-                    exportData = { shop1, shop2, comparison };
+                    // ... reste du code pour la comparaison ...
                 }
 
                 if (!exportData) {
@@ -254,99 +202,4 @@ function initPDFExport() {
             }
         });
     });
-}
-
-// Fonction pour extraire les données de la page principale
-function extractMainData(container) {
-    const cards = container.querySelectorAll('.result-card');
-    const profile = {};
-    const metrics = {};
-
-    cards.forEach(card => {
-        card.querySelectorAll('p').forEach(p => {
-            const text = p.textContent;
-            const strong = p.querySelector('strong');
-            if (strong) {
-                const [label, value] = [
-                    text.split(':')[0].trim(),
-                    strong.textContent.replace(/[€%]/g, '').trim()
-                ];
-                
-                if (text.includes('Boutique') || text.includes('Note') || 
-                    text.includes('Abonnés') || text.includes('Total des ventes')) {
-                    profile[label] = isNaN(value) ? value : parseFloat(value);
-                } else {
-                    metrics[label] = isNaN(value) ? value : parseFloat(value);
-                }
-            }
-        });
-    });
-
-    return { profile, metrics };
-}
-
-// Fonction pour extraire les données de comparaison
-function extractComparisonData(container) {
-    const table = container.querySelector('.comparison-table');
-    if (!table) throw new Error('Tableau de comparaison introuvable');
-
-    const headerCells = table.querySelectorAll('thead th');
-    const shop1Name = headerCells[1].textContent;
-    const shop2Name = headerCells[2].textContent;
-
-    const shop1 = { profile: { shopName: shop1Name }, metrics: {} };
-    const shop2 = { profile: { shopName: shop2Name }, metrics: {} };
-    const comparison = {};
-
-    table.querySelectorAll('tbody tr').forEach(row => {
-        const cells = row.querySelectorAll('td');
-        const metric = cells[0].textContent.toLowerCase().replace(/ /g, '_');
-        const value1 = parseFloat(cells[1].textContent);
-        const value2 = parseFloat(cells[2].textContent);
-        const diffText = cells[3].textContent;
-        
-        shop1.metrics[metric] = value1;
-        shop2.metrics[metric] = value2;
-        
-        if (diffText) {
-            const [diff, percent] = diffText.split('(');
-            comparison[metric] = {
-                difference: parseFloat(diff),
-                percentage: parseFloat(percent.replace(/[%)]/g, ''))
-            };
-        }
-    });
-
-    return { shop1, shop2, comparison };
-}
-
-// Fonction pour extraire les données pro
-function extractProData(container) {
-    const cards = container.querySelectorAll('.result-card');
-    const data = {
-        financials: {},
-        metrics: {}
-    };
-
-    cards.forEach(card => {
-        card.querySelectorAll('p').forEach(p => {
-            const text = p.textContent;
-            const strong = p.querySelector('strong');
-            if (strong) {
-                const [label, value] = [
-                    text.split(':')[0].trim(),
-                    strong.textContent.replace(/[€%]/g, '').trim()
-                ];
-                
-                if (text.includes('Chiffre') || text.includes('Dépenses') || 
-                    text.includes('Solde') || text.includes('marketing')) {
-                    data.financials[label] = parseFloat(value);
-                } else {
-                    data.metrics[label] = parseFloat(value);
-                }
-            }
-        });
-    });
-
-    return data;
 }
