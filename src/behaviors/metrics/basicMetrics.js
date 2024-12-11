@@ -1,16 +1,35 @@
+// src/behaviors/metrics/basicMetrics.js
 import { PatternDetectionSystem } from '../patternDetection.js';
+import { CONFIG } from '../config.js';
 
-export function calculateBasicMetrics(data) {
-    const detector = new PatternDetectionSystem(data);
-    const analysis = await detector.analyze();
-    
-    return {
-        estimatedRevenue: analysis.patterns.sales.revenue,
-        salesFrequency: analysis.patterns.sales.frequency,
-        categoryDistribution: analysis.patterns.sales.categories,
-        averageOrderValue: analysis.patterns.sales.performance.averageValue,
-        satisfactionRate: analysis.patterns.profile.satisfaction
-    };
+export async function calculateBasicMetrics(data) {
+    try {
+        const detector = new PatternDetectionSystem(data);
+        const analysis = await detector.analyze();
+        
+        return {
+            estimatedRevenue: analysis.patterns.sales.revenue || {
+                total: 0,
+                lastMonth: 0,
+                lastWeek: 0
+            },
+            salesFrequency: analysis.patterns.sales.frequency || {
+                daily: 0,
+                weekly: 0,
+                monthly: 0
+            },
+            categoryDistribution: analysis.patterns.sales.categories || {},
+            averageOrderValue: analysis.patterns.sales.performance?.averageValue || 0,
+            satisfactionRate: analysis.patterns.profile.satisfaction || {
+                rating: 0,
+                percentage: 0,
+                totalRatings: 0
+            }
+        };
+    } catch (error) {
+        console.error('Erreur dans calculateBasicMetrics:', error);
+        return {};
+    }
 }
 
 function calculateEstimatedRevenue(transactions) {
