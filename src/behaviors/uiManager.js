@@ -1,6 +1,7 @@
-let charts = {};
 import Chart from 'chart.js/auto';
 import { createSalesEvolutionChart } from './charts/salesChart.js';
+
+let charts = {};
 
 export function initNavigation() {
     const navButtons = document.querySelectorAll('.nav-btn');
@@ -43,8 +44,8 @@ export function displayResults(data, container) {
     // Construction du HTML selon le type de profil
     const isProAccount = data.profile.isPro;
     
-    container.innerHTML = `
-        <div class="results-grid">
+    container.innerHTML = 
+        `<div class="results-grid">
             <!-- Informations du Profil -->
             <div class="result-card" data-section="profile-info">
                 <h3>📊 Informations du Profil</h3>
@@ -52,13 +53,13 @@ export function displayResults(data, container) {
                 <p>Note: <strong>${data.profile.rating.toFixed(1)}/5</strong></p>
                 <p>Abonnés: <strong>${data.profile.followers}</strong></p>
                 <p>Total des ventes: <strong>${data.profile.totalRatings}</strong></p>
-                ${isProAccount ? `
-                    <div class="pro-info">
+                ${isProAccount ? 
+                    `<div class="pro-info">
                         <h4>Informations Pro</h4>
                         <p>SIRET: ${data.profile.businessInfo?.siret || 'Non renseigné'}</p>
                         <p>RCS: ${data.profile.businessInfo?.rcs || 'Non renseigné'}</p>
-                    </div>
-                ` : ''}
+                    </div>`
+                 : ''}
             </div>
             
             <!-- Statistiques Articles -->
@@ -71,15 +72,15 @@ export function displayResults(data, container) {
             </div>
 
             <!-- Performance Marketing (Pro) -->
-            ${isProAccount ? `
-                <div class="result-card" data-section="performance-info">
+            ${isProAccount ? 
+                `<div class="result-card" data-section="performance-info">
                     <h3>🎯 Performance Marketing</h3>
                     <p>Vues totales: <strong>${data.metrics.totalViews}</strong></p>
                     <p>Favoris: <strong>${data.metrics.totalFavorites}</strong></p>
                     <p>Taux d'engagement: <strong>${(data.metrics.totalFavorites / data.metrics.totalViews * 100).toFixed(1)}%</strong></p>
                     <p>Dépenses marketing: <strong>${data.financials.boostExpenses.toFixed(2)}€</strong></p>
-                </div>
-            ` : ''}
+                </div>`
+             : ''}
 
             <!-- Graphique des Ventes par Pays -->
             <div class="result-card">
@@ -97,8 +98,8 @@ export function displayResults(data, container) {
                 </div>
             </div>
 
-            ${isProAccount ? `
-                <!-- Résumé Financier (Pro) -->
+            ${isProAccount ? 
+                `<!-- Résumé Financier (Pro) -->
                 <div class="result-card">
                     <h3>💰 Résumé Financier</h3>
                     <p>Chiffre d'affaires: <strong>${data.financials.totalRevenue.toFixed(2)}€</strong></p>
@@ -113,12 +114,76 @@ export function displayResults(data, container) {
                     <div class="chart-container">
                         <canvas id="brandsChart"></canvas>
                     </div>
+                </div>`
+             : ''}
+
+            <!-- Nouvelle section pour les métriques avancées -->
+            <div class="result-card">
+                <h3>📊 Métriques Avancées</h3>
+                <div class="metrics-tabs">
+                    <button class="tab-btn active" data-tab="basic">Basiques</button>
+                    <button class="tab-btn" data-tab="sales">Ventes</button>
+                    <button class="tab-btn" data-tab="engagement">Engagement</button>
                 </div>
-            ` : ''}
+
+                <!-- Onglet Métriques Basiques -->
+                <div class="tab-content active" id="basic-metrics">
+                    <div class="metric-group">
+                        <h4>Revenus Estimés</h4>
+                        <p>Total: <strong>${data.advancedMetrics.basic.estimatedRevenue.total.toFixed(2)}€</strong></p>
+                        <p>Dernier mois: <strong>${data.advancedMetrics.basic.estimatedRevenue.lastMonth.toFixed(2)}€</strong></p>
+                    </div>
+                    
+                    <div class="metric-group">
+                        <h4>Fréquence des Ventes</h4>
+                        <p>Par jour: <strong>${data.advancedMetrics.basic.salesFrequency.daily.toFixed(1)}</strong></p>
+                        <p>Par semaine: <strong>${data.advancedMetrics.basic.salesFrequency.weekly.toFixed(1)}</strong></p>
+                    </div>
+                </div>
+                
+                <!-- Onglet Ventes -->
+                <div class="tab-content" id="sales-metrics">
+                    <div class="metric-group">
+                        <h4>Croissance des Ventes</h4>
+                        <p>30 jours: <strong>${data.advancedMetrics.sales.salesGrowth['30days'].growth.toFixed(1)}%</strong></p>
+                        <p>90 jours: <strong>${data.advancedMetrics.sales.salesGrowth['90days'].growth.toFixed(1)}%</strong></p>
+                    </div>
+                    
+                    <div class="metric-group">
+                        <h4>Meilleures Ventes</h4>
+                        <p>Article le plus vendu: <strong>${data.advancedMetrics.sales.bestSelling.items.byQuantity[0]?.name || 'N/A'}</strong></p>
+                    </div>
+                </div>
+                
+                <!-- Onglet Engagement -->
+                <div class="tab-content" id="engagement-metrics">
+                    <div class="metric-group">
+                        <h4>Engagement des Followers</h4>
+                        <p>Taux de conversion: <strong>${data.advancedMetrics.engagement.followerMetrics.conversionRate.percentage.toFixed(1)}%</strong></p>
+                        <p>Revenu par follower: <strong>${data.advancedMetrics.engagement.followerMetrics.revenuePerFollower.amount.toFixed(2)}€</strong></p>
+                    </div>
+                </div>
             </div>
-        `;
+        </div>`;
 
     container.classList.add('active');
+
+    // Ajout de la gestion des onglets
+    const tabButtons = container.querySelectorAll('.tab-btn');
+    const tabContents = container.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Retirer la classe active de tous les boutons et contenus
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Ajouter la classe active au bouton cliqué et au contenu correspondant
+            button.classList.add('active');
+            const tabId = `${button.dataset.tab}-metrics`;
+            container.querySelector(`#${tabId}`).classList.add('active');
+        });
+    });
 
     // Création des graphiques
     setTimeout(() => createCharts(data, isProAccount), 0);
@@ -217,54 +282,6 @@ function createBrandsChart(data) {
             }
         });
     }
-}
-
-// Bloc ajouté pour nouveaux graphiques
-function createAdvancedMetricsChart(data) {
-    const ctx = document.getElementById('advancedMetricsChart');
-    if (ctx) {
-        charts.advancedMetrics = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.advancedMetrics.dates,
-                datasets: [{
-                    label: 'Métriques avancées',
-                    data: data.advancedMetrics.values,
-                    backgroundColor: 'rgba(75,192,192,0.4)',
-                    borderColor: 'rgba(75,192,192,1)',
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top'
-                    }
-                },
-                scales: {
-                    x: {
-                        type: 'time',
-                        time: {
-                            unit: 'day'
-                        }
-                    },
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    }
-}
-
-function prepareSalesData(recentSales) {
-    const sortedSales = recentSales.slice().reverse();
-    return {
-        labels: sortedSales.map(sale => `Il y a ${sale.timeAgo} ${sale.unit}`),
-        data: sortedSales.map((_, index) => index + 1)
-    };
 }
 
 function destroyCharts() {
