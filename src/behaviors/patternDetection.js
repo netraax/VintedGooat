@@ -80,22 +80,6 @@ export class PatternDetectionSystem {
         this.chartColors = PATTERN_CONFIG.THEME.CHART_COLORS;
     }
 
-    calculateTopBrands(items) {
-    const brandCounts = {};
-    items.forEach(item => {
-        const brand = item.brand || 'Autre';
-        brandCounts[brand] = (brandCounts[brand] || 0) + 1;
-    });
-
-    return Object.entries(brandCounts)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 5)
-        .reduce((acc, [brand, count]) => {
-            acc[brand] = count;
-            return acc;
-        }, {});
-}
-
     /**
      * Analyse complète du profil et des données
      */
@@ -282,159 +266,33 @@ export class PatternDetectionSystem {
     }
 
     async analyzeTransactions(transactions) {
-    try {
-        const summary = this.extractTransactionSummary(this.data.text || '');
-        const metrics = this.calculateTransactionMetrics(transactions);
+        try {
+            const summary = this.extractTransactionSummary(this.data.text || '');
+            const metrics = this.calculateTransactionMetrics(transactions);
 
-        return {
-            summary,
-            metrics,
-            patterns: this.detectTransactionPatterns(transactions)
-        };
-    } catch (error) {
-        console.error('Erreur dans l\'analyse des transactions:', error);
-        return {};
-    }
-}
-
-async calculateAllMetrics(baseData) {
-    try {
-        return {
-            // Utilisation des fonctions importées au lieu de this.
-            basic: await calculateBasicMetrics(baseData),
-            sales: await calculateSalesMetrics(baseData),
-            engagement: await calculateEngagementMetrics(baseData)
-        };
-    } catch (error) {
-        console.error('Erreur dans le calcul des métriques:', error);
-        return {};
-    }
-}
-
-calculateTransactionMetrics(transactions) {
-    const metrics = {
-        totalRevenue: 0,
-        totalExpenses: 0,
-        netProfit: 0,
-        salesByPeriod: {},
-        expensesByCategory: {},
-        averageOrderValue: 0
-    };
-
-    // Calcul des métriques de base
-    transactions.forEach(transaction => {
-        if (transaction.amount > 0) {
-            metrics.totalRevenue += transaction.amount;
-        } else {
-            metrics.totalExpenses += Math.abs(transaction.amount);
-        }
-
-        // Grouper par période (mois)
-        if (transaction.date) {
-            const monthYear = new Date(transaction.date).toISOString().slice(0, 7);
-            if (!metrics.salesByPeriod[monthYear]) {
-                metrics.salesByPeriod[monthYear] = 0;
-            }
-            metrics.salesByPeriod[monthYear] += transaction.amount;
-        }
-
-        // Grouper les dépenses par catégorie
-        if (transaction.amount < 0) {
-            const type = this.determineTransactionType(transaction.description);
-            if (!metrics.expensesByCategory[type]) {
-                metrics.expensesByCategory[type] = 0;
-            }
-            metrics.expensesByCategory[type] += Math.abs(transaction.amount);
-        }
-    });
-
-    // Calcul du profit net
-    metrics.netProfit = metrics.totalRevenue - metrics.totalExpenses;
-
-    // Calcul de la valeur moyenne des commandes
-    const sales = transactions.filter(t => this.determineTransactionType(t.description) === 'sale');
-    metrics.averageOrderValue = sales.length > 0 
-        ? sales.reduce((sum, sale) => sum + sale.amount, 0) / sales.length 
-        : 0;
-
-    return metrics;
-}
-
-determineTransactionType(description) {
-    const patterns = {
-        sale: /Vente/i,
-        expense: /Commande/i,
-        transfer: /Transfert/i,
-        marketing: /Boost|vitrine/i
-    };
-
-    for (const [type, pattern] of Object.entries(patterns)) {
-        if (pattern.test(description)) return type;
-    }
-
-    return 'other';
-}
-
-detectTransactionPatterns(transactions) {
-    return {
-        volumePatterns: this.analyzeVolumePatterns(transactions),
-        timePatterns: this.analyzeTimePatterns(transactions),
-        categoryPatterns: this.analyzeCategoryPatterns(transactions)
-    };
-}
-
-analyzeVolumePatterns(transactions) {
-    const volumes = transactions.reduce((acc, transaction) => {
-        const type = this.determineTransactionType(transaction.description);
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-    }, {});
-
-    return {
-        totalTransactions: transactions.length,
-        byType: volumes
-    };
-}
-
-analyzeTimePatterns(transactions) {
-    const timeDistribution = transactions.reduce((acc, transaction) => {
-        if (transaction.date) {
-            const date = new Date(transaction.date);
-            const dayOfWeek = date.getDay();
-            const hour = date.getHours();
-
-            if (!acc.byDay[dayOfWeek]) acc.byDay[dayOfWeek] = 0;
-            if (!acc.byHour[hour]) acc.byHour[hour] = 0;
-
-            acc.byDay[dayOfWeek]++;
-            acc.byHour[hour]++;
-        }
-        return acc;
-    }, { byDay: {}, byHour: {} });
-
-    return timeDistribution;
-}
-
-analyzeCategoryPatterns(transactions) {
-    const categories = transactions.reduce((acc, transaction) => {
-        const type = this.determineTransactionType(transaction.description);
-        if (!acc[type]) {
-            acc[type] = {
-                count: 0,
-                totalAmount: 0,
-                averageAmount: 0
+            return {
+                summary,
+                metrics,
+                patterns: this.detectTransactionPatterns(transactions)
             };
+        } catch (error) {
+            console.error('Erreur dans l\'analyse des transactions:', error);
+            return {};
         }
-        
-        acc[type].count++;
-        acc[type].totalAmount += Math.abs(transaction.amount);
-        acc[type].averageAmount = acc[type].totalAmount / acc[type].count;
-        
-        return acc;
-    }, {});
+    }
 
-    return categories;
-}
+    async calculateAllMetrics(baseData) {
+        try {
+            return {
+                basic: await this.calculateBasicMetrics(baseData),
+                sales: await this.calculateSalesMetrics(baseData),
+                engagement: await this.calculateEngagementMetrics(baseData)
+            };
+        } catch (error) {
+            console.error('Erreur dans le calcul des métriques:', error);
+            return {};
+        }
+    }
 
     extractTransactionSummary(text) {
         const summary = {
@@ -743,3 +601,189 @@ analyzeCategoryPatterns(transactions) {
 
 export const PATTERNS = PATTERN_CONFIG.PATTERNS;
 export const THEME = PATTERN_CONFIG.THEME;
+ChatGPT a dit :
+ChatGPT
+Pattern Detection
+Ton code a été enregistré dans un canevas. Tu peux maintenant y apporter des modifications ou poser des questions spécifiques à ce sujet. 😊
+
+
+
+
+
+Vous avez dit :
+écris ce nouveau code : async analyzeTransactions(transactions) {
+        try {
+            const summary = this.extractTransactionSummary(this.data.text || '');
+            const metrics = this.calculateTransactionMetrics(transactions);
+
+            return {
+                summary,
+                metrics,
+                patterns: this.detectTransactionPatterns(transactions)
+            };
+        } catch (error) {
+            console.error('Erreur dans l\'analyse des transactions:', error);
+            return {};
+        }
+    }
+
+    async calculateAllMetrics(baseData) {
+        try {
+            return {
+                basic: await this.calculateBasicMetrics(baseData),
+                sales: await this.calculateSalesMetrics(baseData),
+                engagement: await this.calculateEngagementMetrics(baseData)
+            };
+        } catch (error) {
+            console.error('Erreur dans le calcul des métriques:', error);
+            return {};
+        }
+    }
+ChatGPT a dit :
+ChatGPT
+Modification de Transaction Analysis interrompue
+
+
+
+
+Vous avez dit :
+dans uhne nouvelle page
+ChatGPT a dit :
+ChatGPT
+Transaction Analysis
+Ton nouveau code a été créé dans une nouvelle page intitulée transaction_analysis. Tu peux y apporter des modifications ou poser des questions spécifiques à ce sujet. 😊
+
+
+
+
+
+Vous avez dit :
+je doit corrigier sa maissjai peur de lajouter au mauvais endroit : Voici comment ajouter proprement les méthodes manquantes à votre classe PatternDetectionSystem :
+
+Trouvez où se termine la méthode analyzeTransactions dans votre classe et ajoutez les nouvelles méthodes juste après :
+
+javascriptCopy// Dans votre PatternDetectionSystem, après analyzeTransactions
+calculateTransactionMetrics(transactions) {
+    const metrics = {
+        totalRevenue: 0,
+        totalExpenses: 0,
+        netProfit: 0,
+        salesByPeriod: {},
+        expensesByCategory: {},
+        averageOrderValue: 0
+    };
+
+    // Calcul des métriques de base
+    transactions.forEach(transaction => {
+        if (transaction.amount > 0) {
+            metrics.totalRevenue += transaction.amount;
+        } else {
+            metrics.totalExpenses += Math.abs(transaction.amount);
+        }
+
+        // Grouper par période (mois)
+        if (transaction.date) {
+            const monthYear = new Date(transaction.date).toISOString().slice(0, 7);
+            if (!metrics.salesByPeriod[monthYear]) {
+                metrics.salesByPeriod[monthYear] = 0;
+            }
+            metrics.salesByPeriod[monthYear] += transaction.amount;
+        }
+
+        // Grouper les dépenses par catégorie
+        if (transaction.amount < 0) {
+            const type = this.determineTransactionType(transaction.description);
+            if (!metrics.expensesByCategory[type]) {
+                metrics.expensesByCategory[type] = 0;
+            }
+            metrics.expensesByCategory[type] += Math.abs(transaction.amount);
+        }
+    });
+
+    // Calcul du profit net
+    metrics.netProfit = metrics.totalRevenue - metrics.totalExpenses;
+
+    // Calcul de la valeur moyenne des commandes
+    const sales = transactions.filter(t => this.determineTransactionType(t.description) === 'sale');
+    metrics.averageOrderValue = sales.length > 0 
+        ? sales.reduce((sum, sale) => sum + sale.amount, 0) / sales.length 
+        : 0;
+
+    return metrics;
+}
+
+determineTransactionType(description) {
+    const patterns = {
+        sale: /Vente/i,
+        expense: /Commande/i,
+        transfer: /Transfert/i,
+        marketing: /Boost|vitrine/i
+    };
+
+    for (const [type, pattern] of Object.entries(patterns)) {
+        if (pattern.test(description)) return type;
+    }
+
+    return 'other';
+}
+
+detectTransactionPatterns(transactions) {
+    return {
+        volumePatterns: this.analyzeVolumePatterns(transactions),
+        timePatterns: this.analyzeTimePatterns(transactions),
+        categoryPatterns: this.analyzeCategoryPatterns(transactions)
+    };
+}
+
+analyzeVolumePatterns(transactions) {
+    const volumes = transactions.reduce((acc, transaction) => {
+        const type = this.determineTransactionType(transaction.description);
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+    }, {});
+
+    return {
+        totalTransactions: transactions.length,
+        byType: volumes
+    };
+}
+
+analyzeTimePatterns(transactions) {
+    const timeDistribution = transactions.reduce((acc, transaction) => {
+        if (transaction.date) {
+            const date = new Date(transaction.date);
+            const dayOfWeek = date.getDay();
+            const hour = date.getHours();
+
+            if (!acc.byDay[dayOfWeek]) acc.byDay[dayOfWeek] = 0;
+            if (!acc.byHour[hour]) acc.byHour[hour] = 0;
+
+            acc.byDay[dayOfWeek]++;
+            acc.byHour[hour]++;
+        }
+        return acc;
+    }, { byDay: {}, byHour: {} });
+
+    return timeDistribution;
+}
+
+analyzeCategoryPatterns(transactions) {
+    const categories = transactions.reduce((acc, transaction) => {
+        const type = this.determineTransactionType(transaction.description);
+        if (!acc[type]) {
+            acc[type] = {
+                count: 0,
+                totalAmount: 0,
+                averageAmount: 0
+            };
+        }
+        
+        acc[type].count++;
+        acc[type].totalAmount += Math.abs(transaction.amount);
+        acc[type].averageAmount = acc[type].totalAmount / acc[type].count;
+        
+        return acc;
+    }, {});
+
+    return categories;
+}
