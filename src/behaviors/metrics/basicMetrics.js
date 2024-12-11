@@ -1,21 +1,15 @@
-// src/behaviors/metrics/basicMetrics.js
-import { extractProfileInfo } from '../profileParser.js';
-import { extractSalesInfo, extractFinancials } from '../transactionParser.js';
+import { PatternDetectionSystem } from '../patternDetection.js';
 
 export function calculateBasicMetrics(data) {
-    const {
-        profile,
-        sales,
-        transactions,
-        items
-    } = data;
-
+    const detector = new PatternDetectionSystem(data);
+    const analysis = await detector.analyze();
+    
     return {
-        estimatedRevenue: calculateEstimatedRevenue(transactions),
-        salesFrequency: calculateSalesFrequency(transactions, profile.totalRatings),
-        categoryDistribution: calculateSalesByCategory(transactions),
-        averageOrderValue: calculateAverageOrderValue(transactions, profile.totalRatings),
-        satisfactionRate: calculateSatisfactionRate(profile)
+        estimatedRevenue: analysis.patterns.sales.revenue,
+        salesFrequency: analysis.patterns.sales.frequency,
+        categoryDistribution: analysis.patterns.sales.categories,
+        averageOrderValue: analysis.patterns.sales.performance.averageValue,
+        satisfactionRate: analysis.patterns.profile.satisfaction
     };
 }
 
