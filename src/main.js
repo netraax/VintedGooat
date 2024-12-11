@@ -1,10 +1,10 @@
 import '../css/style.css';
 import { initializeAnalytics } from './behaviors/analytics.js';
 import { setupNotifications, showNotification } from './behaviors/notifications.js';
-import { analyzeProfile } from './behaviors/profileParser.js';
 import { initNavigation, displayResults, clearResults } from './behaviors/uiManager.js';
 import { compareShops } from './behaviors/compareShops.js';
 import { exportToPDF } from './behaviors/pdfExport.js';
+import { PatternDetectionSystem } from './behaviors/patternDetection.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // Initialisation des modules
