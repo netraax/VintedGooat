@@ -1,4 +1,5 @@
 import Chart from 'chart.js/auto';
+import { PatternDetectionSystem } from './patternDetection.js';
 import { createSalesEvolutionChart } from './charts/salesChart.js';
 
 let charts = {};
