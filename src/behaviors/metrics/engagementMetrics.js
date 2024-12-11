@@ -1,22 +1,32 @@
 // src/behaviors/metrics/engagementMetrics.js
-import { extractProfileInfo } from '../profileParser.js';
+import { PatternDetectionSystem } from '../patternDetection.js';
+import { CONFIG } from '../config.js';
 
-export function calculateEngagementMetrics(data) {
+export async function calculateEngagementMetrics(data) {
     try {
         if (!data) return {};
 
-        const {
-            profile = {},
-            sales = { recent: [], byCountry: {} },
-            transactions = [],
-            items = []
-        } = data;
-
+        const detector = new PatternDetectionSystem(data);
+        const analysis = await detector.analyze();
+        
         return {
-            engagement: calculateEngagementRates(profile, sales),
-            followerMetrics: calculateFollowerMetrics(profile, sales, transactions),
-            productMetrics: calculateProductMetrics(items, sales),
-            locationMetrics: calculateSalesByLocation(sales, profile)
+            engagement: analysis.patterns.engagement.rates || {
+                overall: 0,
+                weekly: 0,
+                monthly: 0
+            },
+            followerMetrics: analysis.patterns.engagement.followerMetrics || {
+                conversionRate: { percentage: 0, totalBuyers: 0, totalFollowers: 0 },
+                revenuePerFollower: { amount: 0, total: 0 }
+            },
+            productMetrics: analysis.patterns.engagement.productMetrics || {
+                turnoverRate: { percentage: 0, total: 0 },
+                popularity: {}
+            },
+            locationMetrics: analysis.patterns.engagement.locationMetrics || {
+                distribution: {},
+                mainMarket: null
+            }
         };
     } catch (error) {
         console.error('Erreur dans calculateEngagementMetrics:', error);
