@@ -1,4 +1,3 @@
-// src/behaviors/analytics.js
 import { CONFIG } from './config.js';
 import { PatternDetectionSystem } from './patternDetection.js';
 
