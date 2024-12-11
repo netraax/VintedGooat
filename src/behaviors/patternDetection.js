@@ -80,6 +80,22 @@ export class PatternDetectionSystem {
         this.chartColors = PATTERN_CONFIG.THEME.CHART_COLORS;
     }
 
+    calculateTopBrands(items) {
+    const brandCounts = {};
+    items.forEach(item => {
+        const brand = item.brand || 'Autre';
+        brandCounts[brand] = (brandCounts[brand] || 0) + 1;
+    });
+
+    return Object.entries(brandCounts)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 5)
+        .reduce((acc, [brand, count]) => {
+            acc[brand] = count;
+            return acc;
+        }, {});
+}
+
     /**
      * Analyse complète du profil et des données
      */
@@ -284,9 +300,10 @@ export class PatternDetectionSystem {
 async calculateAllMetrics(baseData) {
     try {
         return {
-            basic: await this.calculateBasicMetrics(baseData),
-            sales: await this.calculateSalesMetrics(baseData),
-            engagement: await this.calculateEngagementMetrics(baseData)
+            // Utilisation des fonctions importées au lieu de this.
+            basic: await calculateBasicMetrics(baseData),
+            sales: await calculateSalesMetrics(baseData),
+            engagement: await calculateEngagementMetrics(baseData)
         };
     } catch (error) {
         console.error('Erreur dans le calcul des métriques:', error);
