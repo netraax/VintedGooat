@@ -1,4 +1,6 @@
-// src/behaviors/patternDetection.js
+import { calculateBasicMetrics } from './metrics/basicMetrics.js';
+import { calculateEngagementMetrics } from './metrics/engagementMetrics.js';
+import { calculateSalesMetrics } from './metrics/salesMetrics.js';
 
 const PATTERN_CONFIG = {
     THEME: {
