@@ -5,13 +5,7 @@ import { calculateSalesMetrics } from './metrics/salesMetrics.js';
 const PATTERN_CONFIG = {
     THEME: {
         PRIMARY_COLOR: '#09B1BA',
-        CHART_COLORS: [
-            '#09B1BA',
-            '#FF6B6B',
-            '#4ECDC4',
-            '#45B7D1',
-            '#96CEB4'
-        ]
+        CHART_COLORS: ['#09B1BA', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4']
     },
     TIME_PERIODS: {
         DAILY: 1,
@@ -27,52 +21,29 @@ const PATTERN_CONFIG = {
     },
     PATTERNS: {
         PROFILE: {
-            shopName: /^([^\n]+)(?=\nÀ propos|$)/m,
-            isPro: /(Pro\n@|Numéro d'entreprise)/,
-            business: /Numéro d'entreprise\s+([^\n]+)\s*([^\n]+)\s*R\.C\.S/,
+            shopName: /^([^
+]+)(?=\nÀ propos|$)/m,
             followers: /(\d+)\s*Abonnés/,
-            following: /(\d+)\s*Abonnement/,
-            memberRatings: /Évaluations des membres \((\d+)\)/,
-            autoRatings: /Évaluations automatiques \((\d+)\)/,
             rating: /(\d+[.,]\d+)\s*\(/
         },
         ITEMS: {
-            full: /([^,]+), prix : (\d+,\d+) €, marque : ([^,]+), taille : ([^\n]+)(?:\n(\d+) vues\s*\n\s*(\d+) favoris)?(?:\nVendu)?/g,
-            price: /prix\s*:\s*(\d+,\d{2})\s*€/,
-            brand: /marque\s*:\s*([^,\n]+)/,
-            size: /taille\s*:\s*([^,\n]+)/,
-            views: /(\d+)\s*vues/,
-            favorites: /(\d+)\s*favoris/,
-            status: /Vendu/
+            full: /([^,]+), prix : (\d+,\d+) €, marque : ([^,]+), taille : ([^\n]+)/g
         },
         SALES: {
-            date: /il y a (\d+) (heure|heures|jour|jours|semaine|semaines|mois|an|ans)/g,
-            languages: {
-                'France': /merci|parfait|nickel/i,
-                'Italie': /grazie|perfetto/i,
-                'Espagne': /gracias|perfecto/i,
-                'Royaume-Uni': /thank you|perfect/i,
-                'Allemagne': /danke/i
-            }
+            date: /il y a (\d+) (heure|heures|jour|jours|semaine|semaines|mois|an|ans)/g
         },
         FINANCIALS: {
-            balance: /Solde (initial|final)\s*(\d+,\d+) €/g,
-            transaction: /(Vente|Commande d'un Boost|Commande Dressing en vitrine|Transfert vers le compte bancaire)\s*([^\n]+)\s*([+-]?\d+,\d+) €\s*(\d+ \w+ \d{4})?/g
+            balance: /Solde (initial|final)\s*(\d+,\d+) €/g
         }
     }
 };
 
-/**
- * Système de détection de patterns modernisé
- */
 export class PatternDetectionSystem {
     constructor(data = {}) {
         this.data = data;
         this.patterns = {
             sales: {},
-            engagement: {},
             profile: {},
-            location: {},
             items: {},
             financials: {}
         };
@@ -80,35 +51,13 @@ export class PatternDetectionSystem {
         this.chartColors = PATTERN_CONFIG.THEME.CHART_COLORS;
     }
 
-    calculateTopBrands(items) {
-    const brandCounts = {};
-    items.forEach(item => {
-        const brand = item.brand || 'Autre';
-        brandCounts[brand] = (brandCounts[brand] || 0) + 1;
-    });
-
-    return Object.entries(brandCounts)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 5)
-        .reduce((acc, [brand, count]) => {
-            acc[brand] = count;
-            return acc;
-        }, {});
-}
-
-    /**
-     * Analyse complète du profil et des données
-     */
     async analyze() {
         try {
             const baseData = await this.extractBaseData();
-            const transactionData = await this.analyzeTransactions(baseData.financials.transactions);
             const metrics = await this.calculateAllMetrics(baseData);
-            
             return {
                 ...baseData,
-                transactionAnalytics: transactionData,
-                advancedMetrics: metrics,
+                metrics,
                 patterns: this.patterns
             };
         } catch (error) {
@@ -122,7 +71,6 @@ export class PatternDetectionSystem {
         return {
             profile: this.extractProfileInfo(text),
             items: this.extractItems(text),
-            sales: this.extractSalesInfo(text),
             financials: this.extractFinancials(text)
         };
     }
@@ -131,50 +79,19 @@ export class PatternDetectionSystem {
         const info = {
             shopName: '',
             followers: 0,
-            following: 0,
-            totalRatings: 0,
-            memberRatings: 0,
-            autoRatings: 0,
-            rating: 0,
-            isPro: false,
-            businessInfo: null
+            rating: 0
         };
 
-        // Nom de la boutique
         const shopNameMatch = text.match(PATTERN_CONFIG.PATTERNS.PROFILE.shopName);
         if (shopNameMatch) {
             info.shopName = shopNameMatch[1].trim();
         }
 
-        // Détection compte pro
-        info.isPro = PATTERN_CONFIG.PATTERNS.PROFILE.isPro.test(text);
-
-        // Infos business si compte pro
-        if (info.isPro) {
-            const businessMatch = text.match(PATTERN_CONFIG.PATTERNS.PROFILE.business);
-            if (businessMatch) {
-                info.businessInfo = {
-                    siret: businessMatch[1],
-                    rcs: businessMatch[2]
-                };
-            }
-        }
-
-        // Extraction des métriques de base
-        const patterns = PATTERN_CONFIG.PATTERNS.PROFILE;
-        const followersMatch = text.match(patterns.followers);
-        const followingMatch = text.match(patterns.following);
-        const ratingsMatch = text.match(patterns.memberRatings);
-        const autoEvalMatch = text.match(patterns.autoRatings);
-        const ratingMatch = text.match(patterns.rating);
-
+        const followersMatch = text.match(PATTERN_CONFIG.PATTERNS.PROFILE.followers);
         if (followersMatch) info.followers = parseInt(followersMatch[1]);
-        if (followingMatch) info.following = parseInt(followingMatch[1]);
-        if (ratingsMatch) info.memberRatings = parseInt(ratingsMatch[1]);
-        if (autoEvalMatch) info.autoRatings = parseInt(autoEvalMatch[1]);
-        if (ratingMatch) info.rating = parseFloat(ratingMatch[1].replace(',', '.'));
 
-        info.totalRatings = info.memberRatings + info.autoRatings;
+        const ratingMatch = text.match(PATTERN_CONFIG.PATTERNS.PROFILE.rating);
+        if (ratingMatch) info.rating = parseFloat(ratingMatch[1].replace(',', '.'));
 
         return info;
     }
@@ -185,66 +102,23 @@ export class PatternDetectionSystem {
         let match;
 
         while ((match = itemPattern.exec(text)) !== null) {
-            const item = {
+            items.push({
                 name: match[1].trim(),
                 price: parseFloat(match[2].replace(',', '.')),
                 brand: match[3].trim(),
-                size: match[4].trim(),
-                views: match[5] ? parseInt(match[5]) : 0,
-                favorites: match[6] ? parseInt(match[6]) : 0,
-                isSold: text.substring(match.index, match.index + 200).includes('Vendu')
-            };
-            items.push(item);
+                size: match[4].trim()
+            });
         }
 
         return items;
     }
 
-    extractSalesInfo(text) {
-        const sales = {
-            byDate: {},
-            byCountry: {},
-            recent: [],
-            totalAmount: 0,
-            conversionRate: 0
-        };
-
-        // Extraction des dates de vente
-        const datePattern = PATTERN_CONFIG.PATTERNS.SALES.date;
-        let match;
-        while ((match = datePattern.exec(text)) !== null) {
-            const amount = parseInt(match[1]);
-            const unit = match[2];
-            const date = this.calculateDate(amount, unit);
-            const dateStr = date.toISOString().split('T')[0];
-            
-            sales.byDate[dateStr] = (sales.byDate[dateStr] || 0) + 1;
-            sales.recent.push({ timeAgo: amount, unit });
-        }
-
-        // Détection des pays par langue
-        Object.entries(PATTERN_CONFIG.PATTERNS.SALES.languages).forEach(([country, pattern]) => {
-            const matches = text.match(pattern);
-            if (matches) {
-                sales.byCountry[country] = matches.length;
-            }
-        });
-
-        return sales;
-    }
-
     extractFinancials(text) {
         const financials = {
-            currentBalance: 0,
             initialBalance: 0,
-            transactions: [],
-            totalRevenue: 0,
-            totalExpenses: 0,
-            boostExpenses: 0,
-            transfers: []
+            finalBalance: 0
         };
 
-        // Extraction des soldes
         const balancePattern = PATTERN_CONFIG.PATTERNS.FINANCIALS.balance;
         let match;
         while ((match = balancePattern.exec(text)) !== null) {
@@ -252,279 +126,28 @@ export class PatternDetectionSystem {
             if (match[1] === 'initial') {
                 financials.initialBalance = amount;
             } else {
-                financials.currentBalance = amount;
+                financials.finalBalance = amount;
             }
-        }
-
-        // Extraction des transactions
-        const transactionPattern = PATTERN_CONFIG.PATTERNS.FINANCIALS.transaction;
-        while ((match = transactionPattern.exec(text)) !== null) {
-            const type = match[1];
-            const description = match[2].trim();
-            const amount = parseFloat(match[3].replace(',', '.'));
-            const date = match[4] ? new Date(match[4]) : null;
-
-            const transaction = { type, description, amount, date };
-
-            if (type === 'Vente') {
-                financials.totalRevenue += amount;
-            } else if (type.includes('Boost') || type.includes('vitrine')) {
-                financials.boostExpenses += Math.abs(amount);
-                financials.totalExpenses += Math.abs(amount);
-            } else if (type.includes('Transfert')) {
-                financials.transfers.push(transaction);
-            }
-
-            financials.transactions.push(transaction);
         }
 
         return financials;
     }
 
-    async analyzeTransactions(transactions) {
-    try {
-        const summary = this.extractTransactionSummary(this.data.text || '');
-        const metrics = this.calculateTransactionMetrics(transactions);
-
-        return {
-            summary,
-            metrics,
-            patterns: this.detectTransactionPatterns(transactions)
-        };
-    } catch (error) {
-        console.error('Erreur dans l\'analyse des transactions:', error);
-        return {};
-    }
-}
-
-async calculateAllMetrics(baseData) {
-    try {
-        return {
-            // Utilisation des fonctions importées au lieu de this.
-            basic: await calculateBasicMetrics(baseData),
-            sales: await calculateSalesMetrics(baseData),
-            engagement: await calculateEngagementMetrics(baseData)
-        };
-    } catch (error) {
-        console.error('Erreur dans le calcul des métriques:', error);
-        return {};
-    }
-}
-
-calculateTransactionMetrics(transactions) {
-    const metrics = {
-        totalRevenue: 0,
-        totalExpenses: 0,
-        netProfit: 0,
-        salesByPeriod: {},
-        expensesByCategory: {},
-        averageOrderValue: 0
-    };
-
-    // Calcul des métriques de base
-    transactions.forEach(transaction => {
-        if (transaction.amount > 0) {
-            metrics.totalRevenue += transaction.amount;
-        } else {
-            metrics.totalExpenses += Math.abs(transaction.amount);
-        }
-
-        // Grouper par période (mois)
-        if (transaction.date) {
-            const monthYear = new Date(transaction.date).toISOString().slice(0, 7);
-            if (!metrics.salesByPeriod[monthYear]) {
-                metrics.salesByPeriod[monthYear] = 0;
-            }
-            metrics.salesByPeriod[monthYear] += transaction.amount;
-        }
-
-        // Grouper les dépenses par catégorie
-        if (transaction.amount < 0) {
-            const type = this.determineTransactionType(transaction.description);
-            if (!metrics.expensesByCategory[type]) {
-                metrics.expensesByCategory[type] = 0;
-            }
-            metrics.expensesByCategory[type] += Math.abs(transaction.amount);
-        }
-    });
-
-    // Calcul du profit net
-    metrics.netProfit = metrics.totalRevenue - metrics.totalExpenses;
-
-    // Calcul de la valeur moyenne des commandes
-    const sales = transactions.filter(t => this.determineTransactionType(t.description) === 'sale');
-    metrics.averageOrderValue = sales.length > 0 
-        ? sales.reduce((sum, sale) => sum + sale.amount, 0) / sales.length 
-        : 0;
-
-    return metrics;
-}
-
-determineTransactionType(description) {
-    const patterns = {
-        sale: /Vente/i,
-        expense: /Commande/i,
-        transfer: /Transfert/i,
-        marketing: /Boost|vitrine/i
-    };
-
-    for (const [type, pattern] of Object.entries(patterns)) {
-        if (pattern.test(description)) return type;
-    }
-
-    return 'other';
-}
-
-detectTransactionPatterns(transactions) {
-    return {
-        volumePatterns: this.analyzeVolumePatterns(transactions),
-        timePatterns: this.analyzeTimePatterns(transactions),
-        categoryPatterns: this.analyzeCategoryPatterns(transactions)
-    };
-}
-
-analyzeVolumePatterns(transactions) {
-    const volumes = transactions.reduce((acc, transaction) => {
-        const type = this.determineTransactionType(transaction.description);
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-    }, {});
-
-    return {
-        totalTransactions: transactions.length,
-        byType: volumes
-    };
-}
-
-analyzeTimePatterns(transactions) {
-    const timeDistribution = transactions.reduce((acc, transaction) => {
-        if (transaction.date) {
-            const date = new Date(transaction.date);
-            const dayOfWeek = date.getDay();
-            const hour = date.getHours();
-
-            if (!acc.byDay[dayOfWeek]) acc.byDay[dayOfWeek] = 0;
-            if (!acc.byHour[hour]) acc.byHour[hour] = 0;
-
-            acc.byDay[dayOfWeek]++;
-            acc.byHour[hour]++;
-        }
-        return acc;
-    }, { byDay: {}, byHour: {} });
-
-    return timeDistribution;
-}
-
-analyzeCategoryPatterns(transactions) {
-    const categories = transactions.reduce((acc, transaction) => {
-        const type = this.determineTransactionType(transaction.description);
-        if (!acc[type]) {
-            acc[type] = {
-                count: 0,
-                totalAmount: 0,
-                averageAmount: 0
-            };
-        }
-        
-        acc[type].count++;
-        acc[type].totalAmount += Math.abs(transaction.amount);
-        acc[type].averageAmount = acc[type].totalAmount / acc[type].count;
-        
-        return acc;
-    }, {});
-
-    return categories;
-}
-
-    extractTransactionSummary(text) {
-        const summary = {
-            initialBalance: 0,
-            finalBalance: 0,
-            period: {
-                start: null,
-                end: null
-            }
-        };
-
-        const finalBalanceMatch = text.match(/Solde final\s*(\d+[.,]\d+)\s*€/);
-        const initialBalanceMatch = text.match(/Solde initial\s*(\d+[.,]\d+)\s*€/);
-
-        if (finalBalanceMatch) {
-            summary.finalBalance = parseFloat(finalBalanceMatch[1].replace(',', '.'));
-        }
-        if (initialBalanceMatch) {
-            summary.initialBalance = parseFloat(initialBalanceMatch[1].replace(',', '.'));
-        }
-
-        const datePattern = /(\d{1,2}\s+\w+\s+\d{4})/g;
-        const dates = [...text.matchAll(datePattern)].map(match => new Date(match[1]));
-        
-        if (dates.length > 0) {
-            summary.period.start = new Date(Math.min(...dates));
-            summary.period.end = new Date(Math.max(...dates));
-        }
-
-        return summary;
-    }
-
-    calculateDate(amount, unit) {
-        const date = new Date();
-        switch(unit) {
-            case 'heure':
-            case 'heures':
-                date.setHours(date.getHours() - amount);
-                break;
-            case 'jour':
-            case 'jours':
-                date.setDate(date.getDate() - amount);
-                break;
-            case 'semaine':
-            case 'semaines':
-                date.setDate(date.getDate() - (amount * 7));
-                break;
-            case 'mois':
-                date.setMonth(date.getMonth() - amount);
-                break;
-            case 'an':
-            case 'ans':
-                date.setFullYear(date.getFullYear() - amount);
-                break;
-        }
-        return date;
-    }
-
-    async analyzeAndFormat() {
+    async calculateAllMetrics(baseData) {
         try {
-            const analysis = await this.analyze();
             return {
-                data: await this.formatForUI(analysis),
-                charts: this.prepareChartData(analysis)
+                basic: await calculateBasicMetrics(baseData),
+                sales: await calculateSalesMetrics(baseData),
+                engagement: await calculateEngagementMetrics(baseData)
             };
         } catch (error) {
-            console.error('Erreur dans analyzeAndFormat:', error);
-            throw error;
+            console.error('Erreur dans le calcul des métriques:', error);
+            return {};
         }
     }
 
     prepareChartData(analysis) {
         return {
-            countryChart: {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(analysis.sales.byCountry || {}),
-                    datasets: [{
-                        data: Object.values(analysis.sales.byCountry || {}),
-                        backgroundColor: this.chartColors
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'right' }
-                    }
-                }
-            },
             salesEvolutionChart: {
                 type: 'line',
                 data: this.prepareSalesEvolutionData(analysis),
@@ -535,18 +158,7 @@ analyzeCategoryPatterns(transactions) {
                         y: { beginAtZero: true }
                     }
                 }
-            },
-            brandsChart: analysis.profile.isPro ? {
-                type: 'bar',
-                data: this.prepareBrandsData(analysis),
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    }
-                }
-            } : null
+            }
         };
     }
 
@@ -556,190 +168,9 @@ analyzeCategoryPatterns(transactions) {
             datasets: [{
                 label: 'Ventes',
                 data: analysis.sales.recent.map((_, index) => index + 1),
-                borderColor: PATTERN_CONFIG.THEME.PRIMARY_COLOR,tension: 0.4
+                borderColor: PATTERN_CONFIG.THEME.PRIMARY_COLOR,
+                tension: 0.4
             }]
         };
-    }
-
-    prepareBrandsData(analysis) {
-        const brandCounts = {};
-        analysis.items.forEach(item => {
-            if (item.brand) {
-                brandCounts[item.brand] = (brandCounts[item.brand] || 0) + 1;
-            }
-        });
-
-        const sortedBrands = Object.entries(brandCounts)
-            .sort(([,a], [,b]) => b - a)
-            .slice(0, 5);
-
-        return {
-            labels: sortedBrands.map(([brand]) => brand),
-            datasets: [{
-                label: 'Articles',
-                data: sortedBrands.map(([, count]) => count),
-                backgroundColor: PATTERN_CONFIG.THEME.PRIMARY_COLOR
-            }]
-        };
-    }
-
-    async formatForUI(analysis) {
-        const formattedData = {
-            profile: this.formatProfileData(analysis),
-            metrics: this.formatMetricsData(analysis),
-            sales: this.formatSalesData(analysis),
-            financials: this.formatFinancialsData(analysis),
-            advancedMetrics: {
-                basic: this.formatBasicMetrics(analysis),
-                sales: this.formatSalesMetrics(analysis),
-                engagement: this.formatEngagementMetrics(analysis)
-            }
-        };
-
-        return this.addDisplayClasses(formattedData);
-    }
-
-    formatProfileData(analysis) {
-        return {
-            shopName: analysis.profile.shopName || 'Boutique',
-            rating: analysis.profile.rating || 0,
-            followers: analysis.profile.followers || 0,
-            totalRatings: analysis.profile.totalRatings || 0,
-            isPro: analysis.profile.isPro || false,
-            businessInfo: analysis.profile.businessInfo || null,
-            memberRatings: analysis.profile.memberRatings || 0,
-            autoRatings: analysis.profile.autoRatings || 0
-        };
-    }
-
-    formatMetricsData(analysis) {
-        return {
-            totalItems: analysis.items.length || 0,
-            averagePrice: this.calculateAveragePrice(analysis.items),
-            itemsSold: (analysis.items || []).filter(item => item.isSold).length,
-            conversionRate: this.calculateConversionRate(analysis),
-            totalViews: this.sumMetric(analysis.items, 'views'),
-            totalFavorites: this.sumMetric(analysis.items, 'favorites'),
-            revenuePerItem: this.calculateRevenuePerItem(analysis),
-            topBrands: this.calculateTopBrands(analysis.items)
-        };
-    }
-
-    formatSalesData(analysis) {
-        return {
-            recent: analysis.sales.recent || [],
-            byCountry: analysis.sales.byCountry || {},
-            byPeriod: this.formatSalesByPeriod(analysis),
-            performance: {
-                conversionRate: this.calculateConversionRate(analysis),
-                averageDaysToSell: this.calculateAverageDaysToSell(analysis.items),
-                bestPerformingCategories: this.findBestPerformingCategories(analysis)
-            }
-        };
-    }
-
-    formatFinancialsData(analysis) {
-        return {
-            totalRevenue: analysis.financials.totalRevenue || 0,
-            totalExpenses: analysis.financials.totalExpenses || 0,
-            currentBalance: analysis.financials.currentBalance || 0,
-            boostExpenses: analysis.financials.boostExpenses || 0,
-            transfers: analysis.financials.transfers || [],
-            summary: {
-                initialBalance: analysis.financials.initialBalance || 0,
-                finalBalance: analysis.financials.currentBalance || 0,
-                period: this.extractFinancialPeriod(analysis)
-            }
-        };
-    }
-
-    formatBasicMetrics(analysis) {
-        return {
-            estimatedRevenue: {
-                total: analysis.financials.totalRevenue || 0,
-                lastMonth: this.calculateRevenueForPeriod(analysis, 30),
-                lastWeek: this.calculateRevenueForPeriod(analysis, 7)
-            },
-            salesFrequency: this.calculateSalesFrequency(analysis),
-            categoryDistribution: this.calculateCategoryDistribution(analysis.items),
-            averageOrderValue: this.calculateAverageOrderValue(analysis),
-            satisfactionRate: {
-                rating: analysis.profile.rating || 0,
-                totalRatings: analysis.profile.totalRatings || 0
-            }
-        };
-    }
-
-    formatSalesMetrics(analysis) {
-        return {
-            salesGrowth: this.calculateSalesGrowth(analysis),
-            bestSelling: {
-                items: this.findBestSellingItems(analysis),
-                brands: this.findBestSellingBrands(analysis)
-            },
-            performance: {
-                conversionRate: this.calculateConversionRate(analysis),
-                averageDaysToSell: this.calculateAverageDaysToSell(analysis.items)
-            }
-        };
-    }
-
-    formatEngagementMetrics(analysis) {
-        return {
-            followerMetrics: {
-                conversionRate: {
-                    percentage: this.calculateFollowerConversionRate(analysis),
-                    totalBuyers: analysis.profile.totalRatings || 0,
-                    totalFollowers: analysis.profile.followers || 0
-                },
-                revenuePerFollower: {
-                    amount: this.calculateRevenuePerFollower(analysis),
-                    total: analysis.financials.totalRevenue || 0
-                }
-            },
-            productMetrics: this.calculateProductMetrics(analysis),
-            locationMetrics: this.calculateLocationMetrics(analysis)
-        };
-    }
-
-    // Méthodes utilitaires
-    calculateAveragePrice(items) {
-        if (!items.length) return 0;
-        return items.reduce((sum, item) => sum + item.price, 0) / items.length;
-    }
-
-    calculateConversionRate(analysis) {
-        const totalViews = this.sumMetric(analysis.items, 'views');
-        if (!totalViews) return 0;
-        const soldItems = analysis.items.filter(item => item.isSold).length;
-        return (soldItems / totalViews) * 100;
-    }
-
-    sumMetric(items, metric) {
-        return items.reduce((sum, item) => sum + (item[metric] || 0), 0);
-    }
-
-    calculateRevenuePerItem(analysis) {
-        const soldItems = analysis.items.filter(item => item.isSold).length;
-        if (!soldItems) return 0;
-        return analysis.financials.totalRevenue / soldItems;
-    }
-
-    addDisplayClasses(data) {
-        data.displayClasses = {
-            container: 'results-container',
-            grid: 'results-grid',
-            card: 'result-card',
-            cardTitle: 'card-title',
-            cardContent: 'card-content',
-            tabs: 'metrics-tabs',
-            tabButton: 'tab-btn',
-            tabContent: 'tab-content',
-            chart: 'chart-container'
-        };
-        return data;
     }
 }
-
-export const PATTERNS = PATTERN_CONFIG.PATTERNS;
-export const THEME = PATTERN_CONFIG.THEME;
